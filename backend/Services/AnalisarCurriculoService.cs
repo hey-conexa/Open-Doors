@@ -38,6 +38,21 @@ namespace OpenDoors.Api.Services
             return sb.ToString().Trim();
         }
 
+        private static List<string> ExtrairHabilidadesMencionadas(string texto)
+        {
+            var catalogo = new[]
+            {
+                "C#", ".NET", "ASP.NET Core", "Entity Framework Core", "Node.js", "TypeScript", "JavaScript", "React", "Python", "Express",
+                "SQL Server", "PostgreSQL", "Redis", "BullMQ", "SOLID", "POO", "Clean Architecture", "Design Patterns", "JWT",
+                "xUnit", "AutoMapper", "Git", "GitHub", "Swagger", "VBA", "Power BI", "Excel", "Scrum", "Comunicação",
+                "Trabalho em equipe", "Resolução de problemas", "Proatividade", "Liderança", "Pensamento analítico", "Gestão do tempo"
+            };
+
+            return catalogo
+                .Where(habilidade => texto.Contains(habilidade, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
         public async Task<CurriculoAnalisadoDto> AnalisarAsync(Guid estudanteId, Stream pdfStream, string fileName = "curriculo.pdf")
         {
             // Lê o stream completo em memória (precisamos usar duas vezes: upload + extração)
@@ -75,9 +90,9 @@ namespace OpenDoors.Api.Services
                 "Responda APENAS com JSON válido, sem texto adicional, sem markdown, sem ```json.";
 
             var user = $$"""
-                Analise este currículo e retorne um JSON com:
+                                Analise este currículo fielmente e retorne um JSON com:
                 {
-                  "habilidades": ["lista", "de", "habilidades", "técnicas"],
+                                    "habilidades": ["todas as linguagens, frameworks, bibliotecas, bancos, ferramentas, metodologias e competências comportamentais mencionadas"],
                   "experiencias": [
                     {
                       "cargo": "nome do cargo",
@@ -90,11 +105,22 @@ namespace OpenDoors.Api.Services
                   "areasAtuacao": ["área1", "área2"]
                 }
 
+                Regras obrigatórias:
+                - Não limite a resposta a seis itens. Liste todas as habilidades explicitamente presentes no currículo.
+                - Preserve os nomes como aparecem no currículo, incluindo C#, .NET, ASP.NET Core, bancos, ferramentas e metodologias.
+                - Não invente habilidades que não estejam no texto.
+
                 Currículo:
                 {{textoCurriculo}}
                 """;
 
             var dados = await _groq.ChatJsonAsync<CurriculoAnalisadoDto>(system, user);
+            var habilidadesMencionadas = ExtrairHabilidadesMencionadas(textoCurriculo);
+            dados.Habilidades = dados.Habilidades
+                .Concat(habilidadesMencionadas)
+                .Where(habilidade => !string.IsNullOrWhiteSpace(habilidade))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
             // 3. Atualiza o estudante no banco com habilidades + URL do currículo
             var estudante = await _supabase

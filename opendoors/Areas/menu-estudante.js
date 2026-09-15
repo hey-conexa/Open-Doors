@@ -1,6 +1,6 @@
 /* Lógica da Área do Estudante e Teste Vocacional — Escala Likert */
 
-const API = 'http://localhost:5000'
+const API = 'https://opendoors-api.onrender.com'
 let currentSession = null
 let currentStudent = null
 
@@ -293,7 +293,8 @@ async function saveStudentPatch(patch) {
     });
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.erro || 'Falha ao salvar dados do estudante.');
+        const detalhe = err.detalhe ? ` (${err.detalhe})` : '';
+        throw new Error(`${err.erro || 'Falha ao salvar dados do estudante.'}${detalhe}`);
     }
 
     currentStudent = await res.json();
@@ -430,7 +431,8 @@ function abrirModalCurriculo() {
                 const res = await authFetch(`${API}/api/ia/analisar-curriculo`, { method: 'POST', body: fd });
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    throw new Error(err.erro || 'Nao foi possivel analisar o curriculo.');
+                    const detalhe = err.detalhe ? ` (${err.detalhe})` : '';
+                    throw new Error(`${err.erro || 'Nao foi possivel analisar o curriculo.'}${detalhe}`);
                 }
                 // Usa a URL retornada pela API (o backend já salvou no banco, mas atualizamos o estado local)
                 const resultado = await res.json().catch(() => ({}));

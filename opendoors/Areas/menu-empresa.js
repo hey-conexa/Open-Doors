@@ -1,6 +1,6 @@
 /* Painel da Empresa — Open Doors */
 
-const API = 'http://localhost:5000';
+const API = 'https://opendoors-api.onrender.com';
 
 const HABILIDADES_OPCOES = [
     'Comunicacao', 'Trabalho em equipe', 'Lideranca', 'Organizacao', 'Resolucao de problemas',

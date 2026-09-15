@@ -1,6 +1,6 @@
 /* Lógica exclusiva da página AcessoEmpresas */
 
-const API = 'http://localhost:5000';
+const API = 'https://opendoors-api.onrender.com';
 
 // ──────────────────────────────────────────────
 // TABS

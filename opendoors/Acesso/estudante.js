@@ -1,6 +1,6 @@
 /* Lógica exclusiva da página AcessoEstudantes */
 
-const API = 'http://localhost:5000';
+const API = 'https://opendoors-api.onrender.com';
 
 // LOGIN SOCIAL
 function socialLogin(provider) {

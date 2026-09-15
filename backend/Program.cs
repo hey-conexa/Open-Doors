@@ -29,10 +29,9 @@ builder.Services.AddCors(options =>
             if (string.IsNullOrWhiteSpace(origin))
                 return false;
 
-            return origin.Contains("localhost", StringComparison.OrdinalIgnoreCase)
-                || origin.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase)
-                || origin.Contains("ngrok-free.dev", StringComparison.OrdinalIgnoreCase)
-                || origin.Contains("ngrok-free.app", StringComparison.OrdinalIgnoreCase);
+            return origin.Equals("https://opendoorsconexa.netlify.app", StringComparison.OrdinalIgnoreCase)
+                || origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase)
+                || origin.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase);
         })
               .AllowAnyMethod()
               .AllowAnyHeader();

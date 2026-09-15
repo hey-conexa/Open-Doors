@@ -11,6 +11,7 @@ namespace OpenDoors.Api.Services
     public class GroqService
     {
         private readonly HttpClient _http;
+        private readonly string _model;
         private const string Endpoint = "https://api.groq.com/openai/v1/chat/completions";
 
         public GroqService(IConfiguration config, HttpClient http)
@@ -18,6 +19,7 @@ namespace OpenDoors.Api.Services
             _http = http;
             var apiKey = config["Groq:ApiKey"]
                 ?? throw new InvalidOperationException("Groq:ApiKey não configurada no appsettings.Development.json");
+            _model = config["Groq:Model"] ?? "openai/gpt-oss-20b";
             _http.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
         }
@@ -29,7 +31,7 @@ namespace OpenDoors.Api.Services
         {
             var payload = new
             {
-                model = "llama-3.3-70b-versatile",
+                model = _model,
                 messages = new[]
                 {
                     new { role = "system", content = systemPrompt },
@@ -41,9 +43,13 @@ namespace OpenDoors.Api.Services
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _http.PostAsync(Endpoint, content);
-            response.EnsureSuccessStatusCode();
-
             var body = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException(
+                    $"Groq recusou o modelo '{_model}' ({(int)response.StatusCode}): {body}");
+            }
+
             dynamic? parsed = JsonConvert.DeserializeObject(body);
             var texto = (string)(parsed?.choices[0].message.content ?? "");
 
