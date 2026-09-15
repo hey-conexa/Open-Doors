@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="mainstyle.css">
+    <link rel="stylesheet" href="maindark.css">
+    <script src="mainscript.js" defer></script>
+    <script src="maintheme.js" defer></script>
+    <script src="acessibilidade.js" defer></script>
+    <link rel="icon" href="images/favicon/favicon-96x96.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Oswald:wght@200..700&display=swap" rel="stylesheet">
+    <title>Open Doors</title>
+    <link rel="stylesheet" href="acessibilidade.css">
+</head>
+
+<body>
+
+    <a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
+
+    <header>
+        <nav class="navbar">
+            <a href="OpenDoors.html" class="logo-link">
+                <img src="/PIM-3-Open-Doors-main/opendoors/images/open-doors-icon.png" alt="Open Doors — página inicial" class="logo-img">
+            </a>
+
+            <input type="checkbox" id="nav-check">
+            <label for="nav-check" class="hamburger" aria-label="Abrir menu de navegação" aria-controls="menuLinks" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </label>
+
+            <div class="nav-right">
+            <ul class="menu-links">
+                <li><a href="OpenDoors.html">Home</a></li>
+                <li><a href="#">Sobre nós</a></li>
+                <li><a href="#">Contato</a></li>
+                <li class="menu-mobile-only menu-divider"></li>
+                <li class="menu-mobile-only">
+                    <a onclick="toggleProfileDrawer(); document.getElementById('nav-check').checked = false;" style="cursor:pointer; display:flex; align-items:center; gap:10px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                        <span id="mobileProfileLabel">Entrar / Perfil</span>
+                    </a>
+                </li>
+                <li class="menu-mobile-only">
+                    <a onclick="toggleTheme()" style="cursor:pointer; display:flex; align-items:center; gap:10px;">
+                        <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                        <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                        Modo claro / escuro
+                    </a>
+                </li>
+            </ul>
+
+            <div class="profile-wrap">
+                <button class="profile-btn" id="profileBtn"
+                    onclick="toggleProfileDrawer()"
+                    aria-label="Entrar ou criar conta — abrir menu"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    aria-controls="profileDrawer">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="8" r="4"/>
+                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                    </svg>
+                    <span class="profile-btn__label" id="profileBtnLabel">Entrar</span>
+                </button>
+
+                <div class="profile-drawer" id="profileDrawer">
+
+                    <div id="drawerGuest">
+                        <p class="drawer-title">Acessar plataforma</p>
+                        <a href="Acesso/AcessoEstudantes.html" class="drawer-item">
+                            <span class="drawer-item__text">
+                                <strong>Sou Estudante</strong>
+                                <small>Acesse vagas e oportunidades</small>
+                            </span>
+                            <svg class="drawer-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </a>
+
+                        <a href="Acesso/AcessoEmpresas.html" class="drawer-item">
+                            <span class="drawer-item__text">
+                                <strong>Sou Empresa</strong>
+                                <small>Encontre jovens talentos</small>
+                            </span>
+                            <svg class="drawer-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </a>
+                    </div>
+
+
+                    <div id="drawerStudent" style="display:none">
+                        <div class="drawer-user-header">
+                            <div class="drawer-avatar" id="drawerAvatar">?</div>
+                            <div>
+                                <p class="drawer-user-name" id="drawerUserName">Estudante</p>
+                                <p class="drawer-user-role">Estudante</p>
+                            </div>
+                        </div>
+                        <a href="Areas/MenuEstudante.html" class="drawer-item">
+                            <span class="drawer-item__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+                            <span class="drawer-item__text">
+                                <strong>Meu Perfil</strong>
+                                <small>Vagas, candidaturas e dados</small>
+                            </span>
+                            <svg class="drawer-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </a>
+                        <button class="drawer-logout" onclick="logoutStudent()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Desconectar
+                        </button>
+                    </div>
+
+                    <div id="drawerCompany" style="display:none">
+                        <div class="drawer-user-header">
+                            <div class="drawer-avatar" id="drawerAvatar">E</div>
+                            <div>
+                                <p class="drawer-user-name" id="drawerUserName">Empresa</p>
+                                <p class="drawer-user-role">Conta Empresa</p>
+                            </div>
+                        </div>
+                        <a href="Areas/MenuEmpresa.html" class="drawer-item">
+                            <span class="drawer-item__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg></span>
+                            <span class="drawer-item__text">
+                                <strong>Painel da Empresa</strong>
+                                <small>Vagas, candidaturas e perfil</small>
+                            </span>
+                            <svg class="drawer-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </a>
+                        <button class="drawer-logout" onclick="logoutCompany()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Desconectar
+                        </button>
+                    </div>
+                </div>
+                <div class="profile-overlay" id="profileOverlay" onclick="closeProfileDrawer()"></div>
+            </div>
+
+            <button class="theme-toggle-nav" onclick="toggleTheme()" aria-label="Alternar modo escuro">
+                <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                </svg>
+                <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1"  x2="12" y2="3"/>  <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22"  x2="5.64" y2="5.64"/>  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1"  y1="12" x2="3"  y2="12"/>  <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+                <span>Modo escuro</span>
+            </button>
+            </div>
+        </nav>
+    </header>
+
+
+    <!--TOPO DO SITE-->
+
+    <main id="main-content">
+        <section class="topo-site">
+
+            <h1>Abrindo <em>portas</em><br>para o seu futuro</h1>
+
+            <p class="msg-sub">Conectamos estudantes a empresas que buscam novos talentos. Simples assim.</p>
+
+            <div class="botoes-topo">
+                <a href="Acesso/AcessoEstudantes.html" class="btn-top">
+                    <button class="btn-top--estudante">
+                        <img src="images/ImgEstudante.jpg" loading="lazy" alt="Imagem do botão de Estudante" class="btn-top__bg">
+                        <div class="btn-top__overlay"></div>
+                        <div class="btn-top__content">
+                            <div class="btn-top__title">Estudante</div>
+                            <span class="btn-top__desc">Acesse milhares de vagas e oportunidades para estudantes</span>
+                        </div>
+                    </button>
+                </a>
+                <a href="Acesso/AcessoEmpresas.html" class="btn-top">
+                    <button class="btn-top--empresa">
+                        <img src="images/ImgEmpresa.jpg" loading="lazy" alt="Imagem do botão de Empresa" class="btn-top__bg">
+                        <div class="btn-top__overlay"></div>
+                        <div class="btn-top__content">
+                            <div class="btn-top__title">Empresa</div>
+                            <span class="btn-top__desc">Encontre jovens talentos para sua empresa</span>
+                        </div>
+                    </button>
+                </a>
+            </div>
+
+        </section>
+    </main>
+
+
+    <section class="mural">
+        <div class="mural-container">
+            <h2>Mural</h2>
+            <div class="mural-img">
+                <div class="mural-carousel" role="region" aria-label="Carrossel de anúncios">
+                    <div class="mural-track" id="muralTrack" aria-live="off">
+                        <div class="mural-slide" role="img" aria-label="Anúncio TechNova" style="background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:#fff; padding:32px;">
+                            <div style="font-size:2rem; font-weight:800; letter-spacing:-1px;">🚀 TechNova</div>
+                            <div style="font-size:1.1rem; font-weight:600; opacity:0.9;">Vagas de estágio em tecnologia para você!</div>
+                            <div style="font-size:0.85rem; opacity:0.75; margin-top:4px;">Cadastre-se e encontre a oportunidade ideal</div>
+                            <div style="margin-top:12px; background:#fff; color:#2563eb; border-radius:20px; padding:8px 24px; font-weight:700; font-size:0.9rem;">Saiba mais →</div>
+                        </div>
+                        <div class="mural-slide" role="img" aria-label="Anúncio Grupo Meridian" style="background: linear-gradient(135deg, #064e3b 0%, #10b981 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:#fff; padding:32px;">
+                            <div style="font-size:2rem; font-weight:800; letter-spacing:-1px;">🌿 Grupo Meridian</div>
+                            <div style="font-size:1.1rem; font-weight:600; opacity:0.9;">Crescimento real. Carreira de verdade.</div>
+                            <div style="font-size:0.85rem; opacity:0.75; margin-top:4px;">Mais de 200 estudantes contratados em 2024</div>
+                            <div style="margin-top:12px; background:#fff; color:#10b981; border-radius:20px; padding:8px 24px; font-weight:700; font-size:0.9rem;">Ver vagas →</div>
+                        </div>
+                        <div class="mural-slide" role="img" aria-label="Anúncio Inova RH" style="background: linear-gradient(135deg, #4c1d95 0%, #8b5cf6 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:#fff; padding:32px;">
+                            <div style="font-size:2rem; font-weight:800; letter-spacing:-1px;">✨ Inova RH</div>
+                            <div style="font-size:1.1rem; font-weight:600; opacity:0.9;">Conectando talentos ao futuro do trabalho</div>
+                            <div style="font-size:0.85rem; opacity:0.75; margin-top:4px;">Empresas parceiras em todo o Brasil</div>
+                            <div style="margin-top:12px; background:#fff; color:#8b5cf6; border-radius:20px; padding:8px 24px; font-weight:700; font-size:0.9rem;">Conheça →</div>
+                        </div>
+                    </div>
+                    <button class="mural-arrow mural-arrow--left" onclick="muralMove(-1)" aria-label="Anúncio anterior">&#8249;</button>
+                    <button class="mural-arrow mural-arrow--right" onclick="muralMove(1)" aria-label="Próximo anúncio">&#8250;</button>
+                </div>
+
+                <div class="mural-dots" id="muralDots" role="tablist" aria-label="Selecionar anúncio">
+                    <span class="mural-dot mural-dot--active" onclick="muralGoTo(0)" role="tab" aria-selected="true" aria-label="Anúncio 1" tabindex="0"></span>
+                    <span class="mural-dot" onclick="muralGoTo(1)" role="tab" aria-selected="false" aria-label="Anúncio 2" tabindex="0"></span>
+                    <span class="mural-dot" onclick="muralGoTo(2)" role="tab" aria-selected="false" aria-label="Anúncio 3" tabindex="0"></span>
+                    <button id="muralPauseBtn" class="mural-pause-btn" aria-label="Pausar carrossel">&#9646;&#9646;</button>
+                </div>
+
+                <div class="mural-thumbs">
+                    <div class="mural-thumb mural-thumb--filled mural-thumb--active" onclick="muralGoTo(0)">Anúncio 1</div>
+                    <div class="mural-thumb" onclick="muralGoTo(1)">Anúncio 2</div>
+                    <div class="mural-thumb" onclick="muralGoTo(2)">Anúncio 3</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="apoiadores">
+        <div class="apoiadores-carousel">
+            <h2>Nossos apoiadores</h2>
+            <div class="carousel-wrapper">
+                <div class="carousel-imagens" aria-label="Logos dos apoiadores" role="list">
+                    <img src="images/apoiador-unip.jpeg" alt="UNIP" role="listitem">
+                    <img src="images/apoiador-netflix.jpeg" alt="Netflix" role="listitem">
+                    <img src="images/apoiador-cocacola.jpeg" alt="Coca-Cola" role="listitem">
+                    <img src="images/apoiador-enghouse.jpeg" alt="Enghouse Systems" role="listitem">
+                    <img src="images/apoiador-ibm.jpeg" alt="IBM" role="listitem">
+                    <img src="images/apoiador-intel.jpeg" alt="Intel" role="listitem">
+                    <img src="images/apoiador-dell.jpeg" alt="Dell" role="listitem">
+                    <img src="images/apoiador-intelbras.jpeg" alt="Intelbras" role="listitem">
+                    <img src="images/apoiador-santander.jpeg" alt="Santander" role="listitem">
+                    <img src="images/apoiador-seara.jpeg" alt="Seara" role="listitem">
+                    <img src="images/apoiador-lacta.jpeg" alt="Lacta" role="listitem">
+                    <img src="images/apoiador-ortobom.jpeg" alt="Ortobom" role="listitem">
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <footer class="footer-strip">
+        <p>© 2025 Powered by Conexa. Todos os direitos reservados.</p>
+        <div class="footer-links">
+            <a href="#">Privacidade</a>
+            <a href="#">Termos</a>
+            <a href="#">Contato</a>
+        </div>
+    </footer>
+
+    <script src="navbar-profile.js"></script>
+</body>
+</html>

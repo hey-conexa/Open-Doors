@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\isaac\\\\Downloads\\\\PIM-3-Open-Doors-main-20260602T235316Z-3-001\\\\PIM-3-Open-Doors-main\" -Force)",
+      "Bash(grep -E \"\\\\.\\(html|css|js\\)$\")",
+      "mcp__74ee5a2e-005d-4127-9152-f6ff27a01f78__list_projects",
+      "mcp__74ee5a2e-005d-4127-9152-f6ff27a01f78__list_tables",
+      "mcp__74ee5a2e-005d-4127-9152-f6ff27a01f78__apply_migration",
+      "mcp__74ee5a2e-005d-4127-9152-f6ff27a01f78__get_project_url",
+      "mcp__74ee5a2e-005d-4127-9152-f6ff27a01f78__get_publishable_keys",
+      "mcp__74ee5a2e-005d-4127-9152-f6ff27a01f78__execute_sql",
+      "Bash(python skills/ui-ux-pro-max/scripts/search.py \"job platform student dashboard SaaS professional Brazil\" --design-system -p \"Open Doors\")",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"job platform student dashboard SaaS professional Brazil\" --design-system -p \"Open Doors\")",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"animation accessibility hover transitions\" --domain ux)",
+      "Bash(where ngrok *)"
+    ]
+  }
+}

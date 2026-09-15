@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="../images/favicon/favicon-96x96.png" type="image/x-icon">
+  <title>Open Doors — Empresas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="acesso.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-client.js" defer></script>
+  <script src="acesso-shared.js" defer></script>
+  <script src="empresa.js" defer></script>
+  <link rel="stylesheet" href="../acessibilidade.css">
+  <script src="../acessibilidade.js" defer></script>
+</head>
+<body>
+
+  <a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
+
+  <nav class="navbar" role="navigation" aria-label="Navegação principal">
+    <div class="navbar-left">
+      <a href="../OpenDoors.html" class="back-btn" aria-label="Voltar para a página principal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+        Voltar
+      </a>
+      <a href="../OpenDoors.html" class="logo-link" aria-label="Open Doors — início">
+        <img src="../images/open-doors-icon.png" alt="" class="logo-img">
+      </a>
+    </div>
+    <div class="navbar-right">
+      <span class="page-badge">Empresa</span>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar modo escuro">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/> <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/> <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/> <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/> <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <span>Modo escuro</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="page-layout">
+
+    <aside class="brand-panel">
+      <h1 class="brand-headline">
+        Os melhores<br>talentos<br><span>estão aqui.</span>
+      </h1>
+      <p class="brand-sub">
+        Cadastre sua empresa e conecte-se a estudantes qualificados prontos para contribuir com o seu time.
+      </p>
+      <div class="brand-stats">
+        <div class="stat">
+          <div class="stat-value">+12k</div>
+          <div class="stat-label">Estudantes ativos</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">98%</div>
+          <div class="stat-label">Satisfação das empresas</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">340+</div>
+          <div class="stat-label">Empresas parceiras</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">48h</div>
+          <div class="stat-label">Retorno médio</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main" id="main-content">
+      <div class="form-container">
+
+        <!-- ── TABS ── -->
+        <div class="tabs" role="tablist" aria-label="Acesso empresa">
+          <button class="tab active" id="tab-login"    role="tab" aria-selected="true"  aria-controls="screen-login"    onclick="switchTab('login')">Entrar</button>
+          <button class="tab"        id="tab-register" role="tab" aria-selected="false" aria-controls="screen-register" onclick="switchTab('register')">Cadastrar empresa</button>
+        </div>
+
+        <!-- ── LOGIN ── -->
+        <div class="screen active" id="screen-login" role="tabpanel" aria-labelledby="tab-login">
+          <h2 class="screen-title">Acesse sua conta</h2>
+          <p class="screen-sub">Entre com o e-mail e senha da sua empresa.</p>
+
+          <div class="fields">
+            <div class="field">
+              <label for="login-email">E-mail corporativo</label>
+              <input type="email" id="login-email" placeholder="contato@empresa.com"
+                     autocomplete="email" aria-required="true">
+            </div>
+            <div class="field">
+              <label for="login-pw">Senha</label>
+              <div class="pw-wrap">
+                <input type="password" id="login-pw" placeholder="Sua senha"
+                       autocomplete="current-password" aria-required="true">
+                <button type="button" class="pw-toggle" onclick="togglePw('login-pw',this)" aria-label="Mostrar senha">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <button class="btn-primary mt-sm" onclick="companyLogin()">Entrar</button>
+          </div>
+        </div>
+
+        <!-- ── CADASTRO ── -->
+        <div class="screen" id="screen-register" role="tabpanel" aria-labelledby="tab-register">
+          <h2 class="screen-title">Cadastro de empresa</h2>
+          <p class="screen-sub">Crie sua conta para publicar vagas e encontrar talentos.</p>
+
+          <div class="fields">
+            <p class="section-label">Dados da empresa</p>
+
+            <div class="field">
+              <label for="co-name">Razão social</label>
+              <input type="text" id="co-name" placeholder="Nome oficial da empresa" autocomplete="organization" aria-required="true">
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="co-cnpj">CNPJ</label>
+                <input type="text" id="co-cnpj" placeholder="00.000.000/0000-00" maxlength="18"
+                       oninput="maskCNPJ(this)" aria-required="true">
+              </div>
+              <div class="field">
+                <label for="co-setor">Setor / Ramo</label>
+                <input type="text" id="co-setor" placeholder="Ex: Tecnologia, Saúde...">
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="co-cep">CEP</label>
+                <div class="cep-wrap">
+                  <input type="text" id="co-cep" placeholder="00000-000" maxlength="9"
+                         oninput="maskCEP(this)" onblur="fetchCEP()" aria-required="true">
+                  <span class="cep-spinner" id="cep-spinner-co" style="display:none;" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                  </span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="co-city">Cidade</label>
+                <input type="text" id="co-city" placeholder="Preenchida automaticamente" readonly>
+              </div>
+            </div>
+
+            <p class="section-label">Responsável pelo contato</p>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="co-contact">Nome completo</label>
+                <input type="text" id="co-contact" placeholder="Quem devemos contatar" autocomplete="name" aria-required="true">
+              </div>
+              <div class="field">
+                <label for="co-role">Cargo</label>
+                <input type="text" id="co-role" placeholder="Ex: Gerente de RH" aria-required="true">
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="co-email">E-mail corporativo</label>
+                <input type="email" id="co-email" placeholder="contato@empresa.com" autocomplete="email" aria-required="true">
+              </div>
+              <div class="field">
+                <label for="co-phone">Telefone</label>
+                <input type="tel" id="co-phone" placeholder="(00) 00000-0000" maxlength="15"
+                       oninput="maskPhone(this)" aria-required="true">
+              </div>
+            </div>
+
+            <p class="section-label">Acesso à plataforma</p>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="co-pw">Senha</label>
+                <div class="pw-wrap">
+                  <input type="password" id="co-pw" placeholder="Mín. 8 caracteres"
+                         autocomplete="new-password" aria-required="true" oninput="checkPwStrength(this.value,'co-pw-bars','co-pw-label')">
+                  <button type="button" class="pw-toggle" onclick="togglePw('co-pw',this)" aria-label="Mostrar senha">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+                <div class="pw-strength">
+                  <div class="pw-bars" id="co-pw-bars">
+                    <div class="pw-bar"></div><div class="pw-bar"></div><div class="pw-bar"></div><div class="pw-bar"></div>
+                  </div>
+                  <span class="pw-label" id="co-pw-label"></span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="co-pwc">Confirmar senha</label>
+                <div class="pw-wrap">
+                  <input type="password" id="co-pwc" placeholder="Repita a senha"
+                         autocomplete="new-password" aria-required="true">
+                  <button type="button" class="pw-toggle" onclick="togglePw('co-pwc',this)" aria-label="Mostrar confirmação">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-box">
+              Suas informações são usadas somente para contato e exibição às candidaturas relevantes.
+              Nenhum dado é compartilhado com terceiros sem seu consentimento.
+            </div>
+
+            <div id="co-terms-wrap">
+              <label class="check-field">
+                <input type="checkbox" id="co-terms">
+                <span>
+                  Li e concordo com os <a href="#" target="_blank">Termos de Uso para Empresas</a>
+                  e a <a href="#" target="_blank">Política de Privacidade</a> do Open Doors.
+                </span>
+              </label>
+            </div>
+
+            <button class="btn-primary mt-sm" onclick="companyRegister()">Criar conta</button>
+          </div>
+        </div>
+
+        <!-- ── SUCESSO ── -->
+        <div class="success-screen" id="screen-success">
+          <div class="success-icon">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h2 id="success-title">Conta criada com sucesso!</h2>
+          <p id="success-msg">Bem-vindo(a) ao Open Doors. Redirecionando para o painel...</p>
+          <div class="success-meta" id="success-meta">
+            <div><strong>Empresa</strong> <span id="s-company">—</span></div>
+            <div><strong>Contato</strong> <span id="s-contact">—</span></div>
+            <div><strong>E-mail</strong>  <span id="s-email">—</span></div>
+            <div><strong>Cidade</strong>  <span id="s-city">—</span></div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

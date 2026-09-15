@@ -1,0 +1,13 @@
+# Arquivos sensíveis
+appsettings.Development.json
+appsettings.Production.json
+minhas_keys.txt
+*.env
+
+# Build do .NET
+bin/
+obj/
+
+# IDE
+.vs/
+.vscode/

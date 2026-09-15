@@ -1,0 +1,253 @@
+/* ═══════════════════════════════════════════════
+   BARRA DE ACESSIBILIDADE — Open Doors
+   ═══════════════════════════════════════════════ */
+
+/* ── Barra flutuante ─────────────────────────── */
+#acessibilidade-barra {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Botão principal ─────────────────────────── */
+.acc-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--blue, #0a82a8);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+    transition: background 0.2s, transform 0.2s;
+    margin-left: auto;
+}
+
+.acc-toggle-btn:hover,
+.acc-toggle-btn:focus-visible {
+    background: var(--blue-dark, #066a8a);
+    transform: scale(1.08);
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+}
+
+/* ── Painel ──────────────────────────────────── */
+.acc-painel {
+    position: absolute;
+    bottom: 60px;
+    right: 0;
+    width: 240px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(9,45,58,.20);
+    padding: 20px 16px 16px;
+    border: 1px solid #e0eaee;
+}
+
+[data-theme="dark"] .acc-painel {
+    background: #1e2e36;
+    border-color: #2e424e;
+    color: #e2edf2;
+}
+
+.acc-titulo {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--blue, #0a82a8);
+    margin: 0 0 14px;
+}
+
+.acc-grupo {
+    margin-bottom: 14px;
+}
+
+.acc-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #6b8a97;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+/* ── Botões de tamanho de fonte ──────────────── */
+.acc-fonte-btns {
+    display: flex;
+    gap: 6px;
+}
+
+.acc-btn-fonte {
+    flex: 1;
+    padding: 6px 0;
+    background: #f1f4f3;
+    border: 1.5px solid transparent;
+    border-radius: 8px;
+    font-weight: 700;
+    color: #3a4a56;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1;
+}
+
+.acc-btn-fonte:nth-child(1) { font-size: 0.85rem; }
+.acc-btn-fonte:nth-child(2) { font-size: 1rem; }
+.acc-btn-fonte:nth-child(3) { font-size: 1.15rem; }
+
+.acc-btn-fonte:hover,
+.acc-btn-fonte:focus-visible {
+    background: #d6eaf1;
+    outline: 2px solid var(--blue, #0a82a8);
+}
+
+.acc-btn-fonte.ativo {
+    background: var(--blue, #0a82a8);
+    color: #fff;
+    border-color: var(--blue-dark, #066a8a);
+}
+
+/* ── Botões toggle (contraste / dislexia / libras) */
+.acc-btn-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: #f1f4f3;
+    border: 1.5px solid transparent;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #3a4a56;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+}
+
+.acc-btn-toggle:hover,
+.acc-btn-toggle:focus-visible {
+    background: #d6eaf1;
+    outline: 2px solid var(--blue, #0a82a8);
+}
+
+.acc-btn-toggle.ativo {
+    background: var(--blue, #0a82a8);
+    color: #fff;
+    border-color: var(--blue-dark, #066a8a);
+}
+
+/* ── Redefinir ───────────────────────────────── */
+.acc-btn-redefinir {
+    width: 100%;
+    padding: 7px;
+    background: transparent;
+    border: 1.5px solid #c9d3d0;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    color: #6b8a97;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 4px;
+}
+
+.acc-btn-redefinir:hover,
+.acc-btn-redefinir:focus-visible {
+    border-color: var(--blue, #0a82a8);
+    color: var(--blue, #0a82a8);
+}
+
+/* ── Esconde o botão nativo do VLibras (usamos o nosso) ── */
+[vw-access-button] {
+    display: none !important;
+}
+
+/* ── Texto oculto para leitores de tela ──────── */
+.acc-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   PREFERÊNCIAS APLICADAS AO DOCUMENTO
+   ═══════════════════════════════════════════════ */
+
+/* ── Tamanho de fonte ────────────────────────── */
+html[data-font-size="grande"] {
+    font-size: 112% !important;
+}
+
+html[data-font-size="muito-grande"] {
+    font-size: 125% !important;
+}
+
+/* ── Alto contraste ──────────────────────────── */
+html.alto-contraste {
+    filter: none;
+}
+
+html.alto-contraste body {
+    background: #000 !important;
+    color: #fff !important;
+}
+
+html.alto-contraste a,
+html.alto-contraste button:not(.acc-toggle-btn):not(.acc-btn-fonte):not(.acc-btn-toggle):not(.acc-btn-redefinir) {
+    color: #ffff00 !important;
+    text-decoration: underline !important;
+}
+
+html.alto-contraste img {
+    filter: grayscale(100%) contrast(120%);
+}
+
+html.alto-contraste .navbar,
+html.alto-contraste header,
+html.alto-contraste footer {
+    background: #000 !important;
+    border-bottom: 2px solid #ffff00 !important;
+}
+
+html.alto-contraste input,
+html.alto-contraste textarea,
+html.alto-contraste select {
+    background: #111 !important;
+    color: #fff !important;
+    border: 2px solid #ffff00 !important;
+}
+
+/* ── Fonte para dislexia (OpenDyslexic via Google Fonts fallback) */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
+
+html.fonte-dislexia,
+html.fonte-dislexia body,
+html.fonte-dislexia p,
+html.fonte-dislexia span,
+html.fonte-dislexia h1,
+html.fonte-dislexia h2,
+html.fonte-dislexia h3,
+html.fonte-dislexia h4,
+html.fonte-dislexia li,
+html.fonte-dislexia label,
+html.fonte-dislexia input,
+html.fonte-dislexia textarea,
+html.fonte-dislexia button {
+    font-family: 'Lexend', sans-serif !important;
+    letter-spacing: 0.04em !important;
+    word-spacing: 0.12em !important;
+    line-height: 1.75 !important;
+}

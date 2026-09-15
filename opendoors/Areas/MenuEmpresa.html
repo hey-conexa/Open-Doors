@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Doors — Painel da Empresa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Oswald:wght@200..700&display=swap" rel="stylesheet">
+  <link rel="icon" href="../images/favicon/favicon-96x96.png" type="image/x-icon">
+  <link rel="stylesheet" href="../mainstyle.css">
+  <link rel="stylesheet" href="../maindark.css">
+  <link rel="stylesheet" href="menu-empresa.css">
+  <link rel="stylesheet" href="../acessibilidade.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="../Acesso/supabase-client.js"></script>
+  <script src="../maintheme.js" defer></script>
+  <script src="../acessibilidade.js" defer></script>
+</head>
+<body>
+
+  <a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
+
+  <!-- NAVBAR -->
+  <header>
+    <nav class="navbar">
+      <a href="../OpenDoors.html" class="logo-link">
+        <img src="../images/open-doors-icon.png" alt="Open Doors — página inicial" class="logo-img">
+      </a>
+
+      <div class="nav-right">
+        <span class="em-badge-nav">Empresa</span>
+
+        <div class="profile-wrap">
+          <button class="profile-btn" id="profileBtn"
+              onclick="toggleProfileDrawer()"
+              aria-label="Menu da empresa"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-controls="profileDrawer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="7" width="20" height="15" rx="2"/>
+              <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+            </svg>
+            <span class="profile-btn__label" id="profileBtnLabel">Empresa</span>
+          </button>
+
+          <div class="profile-drawer" id="profileDrawer">
+            <div class="drawer-user-header">
+              <div class="drawer-avatar" id="drawerAvatar">E</div>
+              <div>
+                <p class="drawer-user-name" id="drawerUserName">Empresa</p>
+                <p class="drawer-user-role">Conta Empresa</p>
+              </div>
+            </div>
+            <button class="drawer-logout" onclick="doLogout()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Desconectar
+            </button>
+          </div>
+          <div class="profile-overlay" id="profileOverlay" onclick="closeProfileDrawer()"></div>
+        </div>
+
+        <button class="theme-toggle-nav" onclick="toggleTheme()" aria-label="Alternar modo escuro">
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <span>Modo escuro</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main-content" class="em-layout">
+
+    <!-- HERO -->
+    <div class="em-hero">
+      <div class="em-hero__inner">
+        <div class="em-hero__logo" id="heroLogo" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+        </div>
+        <div class="em-hero__info">
+          <h1 id="heroName">Carregando...</h1>
+          <p class="em-hero__sub" id="heroSub">—</p>
+        </div>
+        <button class="em-btn em-btn--primary" onclick="abrirModalVaga()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Publicar nova vaga
+        </button>
+      </div>
+
+      <!-- STATS -->
+      <div class="em-stats" role="list" aria-label="Estatísticas da empresa">
+        <div class="em-stat" role="listitem">
+          <span class="em-stat__value" id="statVagas">—</span>
+          <span class="em-stat__label">Vagas ativas</span>
+        </div>
+        <div class="em-stat" role="listitem">
+          <span class="em-stat__value" id="statCandidaturas">—</span>
+          <span class="em-stat__label">Candidaturas recebidas</span>
+        </div>
+        <div class="em-stat" role="listitem">
+          <span class="em-stat__value" id="statContratacoes">—</span>
+          <span class="em-stat__label">Total contratações</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO -->
+    <div class="em-content">
+
+      <!-- MINHAS VAGAS -->
+      <section class="em-section" aria-labelledby="vagas-title">
+        <div class="em-section__header">
+          <h2 id="vagas-title">Minhas vagas</h2>
+          <button class="em-btn em-btn--ghost em-btn--sm" onclick="abrirModalVaga()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova vaga
+          </button>
+        </div>
+
+        <div class="em-vagas" id="vagasLista" role="list" aria-label="Suas vagas publicadas">
+          <div class="em-empty" id="vagasEmpty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9" y1="14.5" x2="15" y2="14.5"/></svg>
+            <p>Nenhuma vaga publicada ainda.</p>
+            <small>Clique em "Publicar nova vaga" para começar a receber candidatos.</small>
+            <button class="em-btn em-btn--primary em-btn--sm" style="margin-top:12px" onclick="abrirModalVaga()">Publicar primeira vaga</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- badge de notificação global (polling) -->
+      <span id="pollingBadge" hidden
+            style="position:fixed;bottom:24px;right:80px;
+                   background:var(--primary);color:#fff;font-size:0.78rem;font-weight:600;
+                   padding:6px 14px;border-radius:99px;box-shadow:0 4px 12px rgba(0,0,0,.25);
+                   z-index:200;pointer-events:none;">
+      </span>
+
+    </div>
+  </main>
+
+  <!-- MODAL -->
+  <div class="em-modal-backdrop" id="emModalBackdrop" hidden role="dialog" aria-modal="true" aria-labelledby="emModalTitle">
+    <div class="em-modal">
+      <div class="em-modal__header">
+        <h3 class="em-modal__title" id="emModalTitle">Nova vaga</h3>
+        <button class="em-modal__close" id="emModalClose" onclick="fecharModal()" aria-label="Fechar modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="em-modal__body" id="emModalBody"></div>
+      <div class="em-modal__footer" id="emModalFooter"></div>
+    </div>
+  </div>
+
+  <script src="menu-empresa.js"></script>
+</body>
+</html>

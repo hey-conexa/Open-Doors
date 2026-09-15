@@ -1,0 +1,3 @@
+const SUPABASE_URL = 'https://cmoesdbrpcsbenjchvct.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtb2VzZGJycGNzYmVuamNodmN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDMzOTcsImV4cCI6MjA5NDQxOTM5N30.cjykP8IUbSd0Nu6gW_HB3t-9xT71IvCmYJNpouqQqBY';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
