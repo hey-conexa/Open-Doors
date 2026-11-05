@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Models;
 
 namespace OpenDoors.Api.Controllers
@@ -10,11 +12,11 @@ namespace OpenDoors.Api.Controllers
     [Route("api/testes-respostas")]
     public class TestesRespostasController : ControllerBase
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
-        public TestesRespostasController(Supabase.Client supabase)
+        public TestesRespostasController(AppDbContext dbContext)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
         }
 
         // GET /api/testes-respostas
@@ -23,8 +25,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase.From<TesteResposta>().Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                var resultado = await _dbContext.TestesRespostas.ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -40,12 +42,11 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<TesteResposta>()
+                var resultado = await _dbContext.TestesRespostas
                     .Where(r => r.TesteId == testeId)
-                    .Order(r => r.PerguntaId, Supabase.Postgrest.Constants.Ordering.Ascending)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .OrderBy(r => r.PerguntaId)
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -75,12 +76,9 @@ namespace OpenDoors.Api.Controllers
             {
                 // 1. Verifica se o estudante já tem um registro de TesteVocacional
                 //    (o resultado da IA fica aqui — pode ser que já exista de uma tentativa anterior)
-                var testesExistentes = await _supabase
-                    .From<TesteVocacional>()
-                    .Where(t => t.EstudanteId == body.EstudanteId)
-                    .Get();
+                var testeExistente = await _dbContext.TestesVocacionais
+                    .FirstOrDefaultAsync(t => t.EstudanteId == body.EstudanteId);
 
-                var testeExistente = testesExistentes.Models.FirstOrDefault();
                 int testeId;
 
                 if (testeExistente != null)
@@ -88,13 +86,13 @@ namespace OpenDoors.Api.Controllers
                     // Já existe: limpa as respostas antigas antes de salvar as novas
                     testeId = testeExistente.Id;
 
-                    var respostasAntigas = await _supabase
-                        .From<TesteResposta>()
+                    var respostasAntigas = await _dbContext.TestesRespostas
                         .Where(r => r.TesteId == testeId)
-                        .Get();
+                        .ToListAsync();
 
-                    foreach (var antiga in respostasAntigas.Models)
-                        await antiga.Delete<TesteResposta>();
+                    foreach (var antiga in respostasAntigas)
+                        _dbContext.TestesRespostas.Remove(antiga);
+                    await _dbContext.SaveChangesAsync();
                 }
                 else
                 {
@@ -106,21 +104,15 @@ namespace OpenDoors.Api.Controllers
                         AnalisadoIa = false
                     };
 
-                    var testeInserido = await _supabase
-                        .From<TesteVocacional>()
-                        .Insert(novoTeste);
-
-                    var testeCriado = testeInserido.Models.FirstOrDefault();
-                    if (testeCriado == null)
-                        return StatusCode(500, new { erro = "Erro ao criar registro do teste" });
-
-                    testeId = testeCriado.Id;
+                    await _dbContext.TestesVocacionais.AddAsync(novoTeste);
+                    await _dbContext.SaveChangesAsync();
+                    testeId = novoTeste.Id;
                 }
 
                 // 2. Salva todas as respostas ligadas a esse TesteVocacional
                 foreach (var r in body.Respostas)
                 {
-                    await _supabase.From<TesteResposta>().Insert(new TesteResposta
+                    await _dbContext.TestesRespostas.AddAsync(new TesteResposta
                     {
                         TesteId = testeId,
                         PerguntaId = r.PerguntaId,
@@ -128,6 +120,8 @@ namespace OpenDoors.Api.Controllers
                         Resposta = r.Resposta
                     });
                 }
+
+                await _dbContext.SaveChangesAsync();
 
                 // 3. Retorna as respostas salvas + testeId para o frontend
                 //    O frontend deve chamar POST /api/ia/analisar-teste com essas respostas

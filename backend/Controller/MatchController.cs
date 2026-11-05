@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Middleware;
 using OpenDoors.Api.Models;
 
@@ -11,11 +13,11 @@ namespace OpenDoors.Api.Controllers
     [Route("api/[controller]")]
     public class MatchesController : ControllerBase
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
-        public MatchesController(Supabase.Client supabase)
+        public MatchesController(AppDbContext dbContext)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
         }
 
         // ===========================================
@@ -28,8 +30,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase.From<Match>().Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                var resultado = await _dbContext.Matches.ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -48,10 +50,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Match>()
-                    .Where(m => m.Id == id)
-                    .Single();
+                var resultado = await _dbContext.Matches
+                    .FirstOrDefaultAsync(m => m.Id == id);
 
                 if (resultado == null)
                     return NotFound(new { mensagem = "Match não encontrado" });
@@ -76,12 +76,11 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Match>()
+                var resultado = await _dbContext.Matches
                     .Where(m => m.EstudanteId == estudanteId)
-                    .Order(m => m.ScoreTotal, Supabase.Postgrest.Constants.Ordering.Descending)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .OrderByDescending(m => m.ScoreTotal)
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -99,12 +98,11 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Match>()
+                var resultado = await _dbContext.Matches
                     .Where(m => m.VagaId == vagaId)
-                    .Order(m => m.ScoreTotal, Supabase.Postgrest.Constants.Ordering.Descending)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .OrderByDescending(m => m.ScoreTotal)
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -124,13 +122,12 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Match>()
+                var resultado = await _dbContext.Matches
                     .Where(m => m.EstudanteId == estudanteId)
-                    .Order(m => m.ScoreTotal, Supabase.Postgrest.Constants.Ordering.Descending)
-                    .Limit(5)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .OrderByDescending(m => m.ScoreTotal)
+                    .Take(5)
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -150,12 +147,11 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Match>()
+                var resultado = await _dbContext.Matches
                     .Where(m => m.ScoreTotal >= 80)
-                    .Order(m => m.ScoreTotal, Supabase.Postgrest.Constants.Ordering.Descending)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .OrderByDescending(m => m.ScoreTotal)
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -191,12 +187,10 @@ namespace OpenDoors.Api.Controllers
                     Justificativa = dto.Justificativa
                 };
 
-                var resultado = await _supabase.From<Match>().Insert(novo);
+                await _dbContext.Matches.AddAsync(novo);
+                await _dbContext.SaveChangesAsync();
 
-                if (resultado.Models == null || resultado.Models.Count == 0)
-                    return StatusCode(500, new { erro = "Falha ao criar match" });
-
-                var criado = MapearParaDto(resultado.Models[0]);
+                var criado = MapearParaDto(novo);
                 return CreatedAtAction(nameof(BuscarPorId), new { id = criado.Id }, criado);
             }
             catch (Exception ex)
@@ -211,18 +205,14 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var existente = await _supabase
-                    .From<Match>()
-                    .Where(m => m.Id == id)
-                    .Single();
+                var existente = await _dbContext.Matches
+                    .FirstOrDefaultAsync(m => m.Id == id);
 
                 if (existente == null)
                     return NotFound(new { mensagem = "Match não encontrado" });
 
-                await _supabase
-                    .From<Match>()
-                    .Where(m => m.Id == id)
-                    .Delete();
+                _dbContext.Matches.Remove(existente);
+                await _dbContext.SaveChangesAsync();
 
                 return NoContent();
             }

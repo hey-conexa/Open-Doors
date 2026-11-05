@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Models;
 
 namespace OpenDoors.Api.Controllers
@@ -10,11 +12,11 @@ namespace OpenDoors.Api.Controllers
     [Route("api/[controller]")]
     public class CandidaturasController : ControllerBase
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
-        public CandidaturasController(Supabase.Client supabase)
+        public CandidaturasController(AppDbContext dbContext)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
         }
 
         // ===========================================
@@ -25,8 +27,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase.From<Candidatura>().Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                var resultado = await _dbContext.Candidaturas.ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -43,10 +45,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Candidatura>()
-                    .Where(c => c.Id == id)
-                    .Single();
+                var resultado = await _dbContext.Candidaturas
+                    .FirstOrDefaultAsync(c => c.Id == id);
 
                 if (resultado == null)
                     return NotFound(new { mensagem = "Candidatura não encontrada" });
@@ -68,11 +68,10 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Candidatura>()
+                var resultado = await _dbContext.Candidaturas
                     .Where(c => c.EstudanteId == estudanteId)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -90,11 +89,10 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Candidatura>()
+                var resultado = await _dbContext.Candidaturas
                     .Where(c => c.VagaId == vagaId)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -112,11 +110,10 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Candidatura>()
+                var resultado = await _dbContext.Candidaturas
                     .Where(c => c.EmpresaId == empresaId)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -150,12 +147,10 @@ namespace OpenDoors.Api.Controllers
                     VisualizadoEmpresa = false
                 };
 
-                var resultado = await _supabase.From<Candidatura>().Insert(nova);
+                await _dbContext.Candidaturas.AddAsync(nova);
+                await _dbContext.SaveChangesAsync();
 
-                if (resultado.Models == null || resultado.Models.Count == 0)
-                    return StatusCode(500, new { erro = "Falha ao criar candidatura" });
-
-                var criada = MapearParaDto(resultado.Models[0]);
+                var criada = MapearParaDto(nova);
                 return CreatedAtAction(nameof(BuscarPorId), new { id = criada.Id }, criada);
             }
             catch (Exception ex)
@@ -170,17 +165,16 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var existente = await _supabase
-                    .From<Candidatura>()
-                    .Where(c => c.Id == id)
-                    .Single();
+                var existente = await _dbContext.Candidaturas
+                    .FirstOrDefaultAsync(c => c.Id == id);
 
                 if (existente == null)
                     return NotFound(new { mensagem = "Candidatura não encontrada" });
 
                 existente.Status = novoStatus;
-                var resultado = await existente.Update<Candidatura>();
-                return Ok(MapearParaDto(resultado.Models[0]));
+                _dbContext.Candidaturas.Update(existente);
+                await _dbContext.SaveChangesAsync();
+                return Ok(MapearParaDto(existente));
             }
             catch (Exception ex)
             {
@@ -194,18 +188,14 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var existente = await _supabase
-                    .From<Candidatura>()
-                    .Where(c => c.Id == id)
-                    .Single();
+                var existente = await _dbContext.Candidaturas
+                    .FirstOrDefaultAsync(c => c.Id == id);
 
                 if (existente == null)
                     return NotFound(new { mensagem = "Candidatura não encontrada" });
 
-                await _supabase
-                    .From<Candidatura>()
-                    .Where(c => c.Id == id)
-                    .Delete();
+                _dbContext.Candidaturas.Remove(existente);
+                await _dbContext.SaveChangesAsync();
 
                 return NoContent();
             }

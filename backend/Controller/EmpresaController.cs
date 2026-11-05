@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Middleware;
 using OpenDoors.Api.Models;
 using OpenDoors.Api.Services;
@@ -11,12 +13,12 @@ namespace OpenDoors.Api.Controllers
     [Route("api/[controller]")]
     public class EmpresasController : ControllerBase
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
         private readonly LoginService _loginService;
 
-        public EmpresasController(Supabase.Client supabase, LoginService loginService)
+        public EmpresasController(AppDbContext dbContext, LoginService loginService)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
             _loginService = loginService;
         }
 
@@ -27,8 +29,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase.From<Empresa>().Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                var resultado = await _dbContext.Empresas.ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -44,11 +46,10 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Empresa>()
+                var resultado = await _dbContext.Empresas
                     .Where(e => e.Status == "ativa")
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -64,10 +65,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Empresa>()
-                    .Where(e => e.Id == id)
-                    .Single();
+                var resultado = await _dbContext.Empresas
+                    .FirstOrDefaultAsync(e => e.Id == id);
 
                 if (resultado == null)
                     return NotFound(new { mensagem = "Empresa não encontrada" });
@@ -103,12 +102,10 @@ namespace OpenDoors.Api.Controllers
                     return BadRequest(new { erro = "Senha é obrigatória" });
 
                 // Verifica se o email já está cadastrado
-                var emailJaCadastrado = await _supabase
-                    .From<Login>()
-                    .Where(l => l.Email == dto.Email)
-                    .Get();
+                var emailJaCadastrado = await _dbContext.Logins
+                    .AnyAsync(l => l.Email == dto.Email);
 
-                if (emailJaCadastrado.Models != null && emailJaCadastrado.Models.Count > 0)
+                if (emailJaCadastrado)
                     return BadRequest(new { erro = "Email já cadastrado no sistema" });
 
                 var nova = new Empresa
@@ -135,12 +132,10 @@ namespace OpenDoors.Api.Controllers
                     Status = dto.Status ?? "ativa"
                 };
 
-                var resultado = await _supabase.From<Empresa>().Insert(nova);
+                await _dbContext.Empresas.AddAsync(nova);
+                await _dbContext.SaveChangesAsync();
 
-                if (resultado.Models == null || resultado.Models.Count == 0)
-                    return StatusCode(500, new { erro = "Falha ao criar empresa" });
-
-                var criada = MapearParaDto(resultado.Models[0]);
+                var criada = MapearParaDto(nova);
 
                 // Cria o login para a nova empresa
                 try
@@ -178,10 +173,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var existente = await _supabase
-                    .From<Empresa>()
-                    .Where(e => e.Id == id)
-                    .Single();
+                var existente = await _dbContext.Empresas
+                    .FirstOrDefaultAsync(e => e.Id == id);
 
                 if (existente == null)
                     return NotFound(new { mensagem = "Empresa não encontrada" });
@@ -204,8 +197,9 @@ namespace OpenDoors.Api.Controllers
                 existente.ResponsavelEmail = dto.ResponsavelEmail;
                 existente.Status = dto.Status;
 
-                var resultado = await existente.Update<Empresa>();
-                return Ok(MapearParaDto(resultado.Models[0]));
+                _dbContext.Empresas.Update(existente);
+                await _dbContext.SaveChangesAsync();
+                return Ok(MapearParaDto(existente));
             }
             catch (Exception ex)
             {
@@ -222,19 +216,15 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var existente = await _supabase
-                    .From<Empresa>()
-                    .Where(e => e.Id == id)
-                    .Single();
+                var existente = await _dbContext.Empresas
+                    .FirstOrDefaultAsync(e => e.Id == id);
 
                 if (existente == null)
                     return NotFound(new { mensagem = "Empresa não encontrada" });
 
-                await _supabase
-                    .From<Empresa>()
-                    .Where(e => e.Id == id)
-                    .Delete();
-
+                _dbContext.Empresas.Remove(existente);
+                await _dbContext.SaveChangesAsync();
+            
                 return NoContent();
             }
             catch (Exception ex)

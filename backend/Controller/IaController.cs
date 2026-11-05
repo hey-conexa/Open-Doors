@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Middleware;
 using OpenDoors.Api.Models;
 using OpenDoors.Api.Services;
@@ -15,18 +17,18 @@ namespace OpenDoors.Api.Controllers
         private readonly AnalisarCurriculoService _curriculoService;
         private readonly AnalisarTesteService _testeService;
         private readonly GerarScoreService _scoreService;
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
         public IaController(
             AnalisarCurriculoService curriculoService,
             AnalisarTesteService testeService,
             GerarScoreService scoreService,
-            Supabase.Client supabase)
+            AppDbContext dbContext)
         {
             _curriculoService = curriculoService;
             _testeService = testeService;
             _scoreService = scoreService;
-            _supabase = supabase;
+            _dbContext = dbContext;
         }
 
         // ===========================================
@@ -88,12 +90,8 @@ namespace OpenDoors.Api.Controllers
             }
 
             // Salva ou atualiza o teste vocacional no banco
-            var testesExistentes = await _supabase
-                .From<TesteVocacional>()
-                .Where(t => t.EstudanteId == body.EstudanteId)
-                .Get();
-
-            var testeExistente = testesExistentes.Models.FirstOrDefault();
+            var testeExistente = await _dbContext.TestesVocacionais
+                .FirstOrDefaultAsync(t => t.EstudanteId == body.EstudanteId);
 
             if (testeExistente != null)
             {
@@ -102,11 +100,11 @@ namespace OpenDoors.Api.Controllers
                 testeExistente.PontosFortes = resultado.PontosFortes;
                 testeExistente.DescricaoPerfil = resultado.DescricaoPerfil;
                 testeExistente.AnalisadoIa = true;
-                await testeExistente.Update<TesteVocacional>();
+                _dbContext.TestesVocacionais.Update(testeExistente);
             }
             else
             {
-                await _supabase.From<TesteVocacional>().Insert(new TesteVocacional
+                await _dbContext.TestesVocacionais.AddAsync(new TesteVocacional
                 {
                     EstudanteId = body.EstudanteId,
                     PerfilDominante = resultado.PerfilDominante,
@@ -118,16 +116,16 @@ namespace OpenDoors.Api.Controllers
             }
 
             // Marca o estudante como tendo teste vocacional
-            var estudante = await _supabase
-                .From<Estudante>()
-                .Where(e => e.Id == body.EstudanteId)
-                .Single();
+            var estudante = await _dbContext.Estudantes
+                .FirstOrDefaultAsync(e => e.Id == body.EstudanteId);
 
             if (estudante != null)
             {
                 estudante.TemTesteVocacional = true;
-                await estudante.Update<Estudante>();
+                _dbContext.Estudantes.Update(estudante);
             }
+
+            await _dbContext.SaveChangesAsync();
 
             return Ok(resultado);
         }

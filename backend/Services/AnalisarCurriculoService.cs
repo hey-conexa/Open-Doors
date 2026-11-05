@@ -1,23 +1,27 @@
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Models;
 using UglyToad.PdfPig;
 
 namespace OpenDoors.Api.Services
 {
     /// <summary>
-    /// Analisa currículo (PDF) usando IA, extrai habilidades e salva no Supabase.
+    /// Analisa currículo (PDF) usando IA, extrai habilidades e salva no banco.
     /// </summary>
     public class AnalisarCurriculoService
     {
         private readonly GroqService _groq;
+        private readonly AppDbContext _dbContext;
         private readonly Supabase.Client _supabase;
         private readonly string _supabaseUrl;
 
-        public AnalisarCurriculoService(GroqService groq, Supabase.Client supabase, IConfiguration config)
+        public AnalisarCurriculoService(GroqService groq, AppDbContext dbContext, Supabase.Client supabase, IConfiguration config)
         {
             _groq = groq;
+            _dbContext = dbContext;
             _supabase = supabase;
             _supabaseUrl = config["Supabase:Url"]?.TrimEnd('/') ?? "";
         }
@@ -97,10 +101,8 @@ namespace OpenDoors.Api.Services
             var dados = await _groq.ChatJsonAsync<CurriculoAnalisadoDto>(system, user);
 
             // 3. Atualiza o estudante no banco com habilidades + URL do currículo
-            var estudante = await _supabase
-                .From<Estudante>()
-                .Where(e => e.Id == estudanteId)
-                .Single();
+            var estudante = await _dbContext.Estudantes
+                .FirstOrDefaultAsync(e => e.Id == estudanteId);
 
             if (estudante == null)
                 throw new KeyNotFoundException($"Estudante não encontrado: {estudanteId}");
@@ -110,7 +112,8 @@ namespace OpenDoors.Api.Services
             if (curriculoUrl != null)
                 estudante.CurriculoUrl = curriculoUrl;
 
-            await estudante.Update<Estudante>();
+            _dbContext.Estudantes.Update(estudante);
+            await _dbContext.SaveChangesAsync();
 
             // Devolve a URL para o frontend também
             dados.CurriculoUrl = curriculoUrl;
@@ -118,4 +121,5 @@ namespace OpenDoors.Api.Services
             return dados;
         }
     }
+
 }

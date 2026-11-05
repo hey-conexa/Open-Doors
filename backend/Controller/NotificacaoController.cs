@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Middleware;
 using OpenDoors.Api.Models;
 
@@ -11,11 +13,11 @@ namespace OpenDoors.Api.Controllers
     [Route("api/[controller]")]
     public class NotificacoesController : ControllerBase
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
-        public NotificacoesController(Supabase.Client supabase)
+        public NotificacoesController(AppDbContext dbContext)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
         }
 
         // GET /api/notificacoes
@@ -25,8 +27,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase.From<Notificacao>().Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                var resultado = await _dbContext.Notificacoes.ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -43,12 +45,11 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Notificacao>()
+                var resultado = await _dbContext.Notificacoes
                     .Where(n => n.EstudanteId == estudanteId)
-                    .Order(n => n.CriadoEm!, Supabase.Postgrest.Constants.Ordering.Descending)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .OrderByDescending(n => n.CriadoEm)
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -65,12 +66,11 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Notificacao>()
+                var resultado = await _dbContext.Notificacoes
                     .Where(n => n.EmpresaId == empresaId)
-                    .Order(n => n.CriadoEm!, Supabase.Postgrest.Constants.Ordering.Descending)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .OrderByDescending(n => n.CriadoEm)
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -88,11 +88,10 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Notificacao>()
+                var resultado = await _dbContext.Notificacoes
                     .Where(n => n.EstudanteId == estudanteId && n.Lida == false)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Models;
 using OpenDoors.Api.Services;
 
@@ -11,12 +13,12 @@ namespace OpenDoors.Api.Controllers
     public class JoobleController : ControllerBase
     {
         private readonly JoobleService _jooble;
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
-        public JoobleController(JoobleService jooble, Supabase.Client supabase)
+        public JoobleController(JoobleService jooble, AppDbContext dbContext)
         {
-            _jooble   = jooble;
-            _supabase = supabase;
+            _jooble     = jooble;
+            _dbContext  = dbContext;
         }
 
         // GET /api/jooble/buscar?keywords=Engenharia&location=São Paulo&page=1
@@ -72,20 +74,20 @@ namespace OpenDoors.Api.Controllers
                     // Verifica se já existe uma vaga com o mesmo título e cidade
                     var vaga = JoobleService.ConverterParaVaga(job);
 
-                    var existentes = await _supabase
-                        .From<Vaga>()
-                        .Where(v => v.Titulo == vaga.Titulo && v.Cidade == vaga.Cidade)
-                        .Get();
+                    var existe = await _dbContext.Vagas
+                        .AnyAsync(v => v.Titulo == vaga.Titulo && v.Cidade == vaga.Cidade);
 
-                    if (existentes.Models.Any())
+                    if (existe)
                     {
                         ignoradas++;
                         continue;
                     }
 
-                    await _supabase.From<Vaga>().Insert(vaga);
+                    await _dbContext.Vagas.AddAsync(vaga);
                     salvas++;
                 }
+
+                await _dbContext.SaveChangesAsync();
 
                 return Ok(new
                 {

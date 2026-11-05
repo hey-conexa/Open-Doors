@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Middleware;
 using OpenDoors.Api.Models;
 
@@ -10,11 +12,11 @@ namespace OpenDoors.Api.Controllers
     [Route("api/[controller]")]
     public class VagasController : ControllerBase
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
-        public VagasController(Supabase.Client supabase)
+        public VagasController(AppDbContext dbContext)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
         }
 
         // ===========================================
@@ -26,12 +28,9 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Vaga>()
-                    .Get();
+                var resultado = await _dbContext.Vagas.ToListAsync();
 
-                // Converte cada Model em DTO (sem os campos internos do Supabase)
-                var vagasDto = resultado.Models.Select(MapearParaDto).ToList();
+                var vagasDto = resultado.Select(MapearParaDto).ToList();
 
                 return Ok(vagasDto);
             }
@@ -50,12 +49,11 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Vaga>()
+                var resultado = await _dbContext.Vagas
                     .Where(v => v.Status == "aberta")
-                    .Get();
+                    .ToListAsync();
 
-                var vagasDto = resultado.Models.Select(MapearParaDto).ToList();
+                var vagasDto = resultado.Select(MapearParaDto).ToList();
 
                 return Ok(vagasDto);
             }
@@ -74,13 +72,12 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Vaga>()
+                var resultado = await _dbContext.Vagas
                     .Where(v => v.EmpresaId == empresaId)
-                    .Order("criado_em", Supabase.Postgrest.Constants.Ordering.Descending)
-                    .Get();
+                    .OrderByDescending(v => v.CriadoEm)
+                    .ToListAsync();
 
-                var vagasDto = resultado.Models.Select(MapearParaDto).ToList();
+                var vagasDto = resultado.Select(MapearParaDto).ToList();
                 return Ok(vagasDto);
             }
             catch (Exception ex)
@@ -98,10 +95,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Vaga>()
-                    .Where(v => v.Id == id)
-                    .Single();
+                var resultado = await _dbContext.Vagas
+                    .FirstOrDefaultAsync(v => v.Id == id);
 
                 if (resultado == null)
                     return NotFound(new { mensagem = "Vaga não encontrada" });
@@ -150,19 +145,15 @@ namespace OpenDoors.Api.Controllers
                     Bolsa = dto.Bolsa,
                     Beneficios = dto.Beneficios,
                     VagasDisponiveis = dto.VagasDisponiveis,
-                    CandidaturasRecebidas = 0, // Sempre começa em zero
-                    Status = dto.Status ?? "aberta", // Default "aberta"
+                    CandidaturasRecebidas = 0,
+                    Status = dto.Status ?? "aberta",
                     ExpiraEm = dto.ExpiraEm
                 };
 
-                // Insere no Supabase
-                var resultado = await _supabase.From<Vaga>().Insert(novaVaga);
+                await _dbContext.Vagas.AddAsync(novaVaga);
+                await _dbContext.SaveChangesAsync();
 
-                if (resultado.Models == null || resultado.Models.Count == 0)
-                    return StatusCode(500, new { erro = "Falha ao criar vaga" });
-
-                // Retorna 201 Created com a vaga criada
-                var vagaCriada = MapearParaDto(resultado.Models[0]);
+                var vagaCriada = MapearParaDto(novaVaga);
                 return CreatedAtAction(nameof(BuscarPorId), new { id = vagaCriada.Id }, vagaCriada);
             }
             catch (Exception ex)
@@ -181,16 +172,12 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                // Verifica se a vaga existe
-                var existente = await _supabase
-                    .From<Vaga>()
-                    .Where(v => v.Id == id)
-                    .Single();
+                var existente = await _dbContext.Vagas
+                    .FirstOrDefaultAsync(v => v.Id == id);
 
                 if (existente == null)
                     return NotFound(new { mensagem = "Vaga não encontrada" });
 
-                // Atualiza os campos
                 existente.Titulo = dto.Titulo;
                 existente.Descricao = dto.Descricao;
                 existente.Area = dto.Area;
@@ -209,9 +196,10 @@ namespace OpenDoors.Api.Controllers
                 existente.Status = dto.Status;
                 existente.ExpiraEm = dto.ExpiraEm;
 
-                var resultado = await existente.Update<Vaga>();
+                _dbContext.Vagas.Update(existente);
+                await _dbContext.SaveChangesAsync();
 
-                return Ok(MapearParaDto(resultado.Models[0]));
+                return Ok(MapearParaDto(existente));
             }
             catch (Exception ex)
             {
@@ -229,17 +217,16 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var existente = await _supabase
-                    .From<Vaga>()
-                    .Where(v => v.Id == id)
-                    .Single();
+                var existente = await _dbContext.Vagas
+                    .FirstOrDefaultAsync(v => v.Id == id);
 
                 if (existente == null)
                     return NotFound(new { mensagem = "Vaga não encontrada" });
 
                 existente.Status = novoStatus;
-                var resultado = await existente.Update<Vaga>();
-                return Ok(MapearParaDto(resultado.Models[0]));
+                _dbContext.Vagas.Update(existente);
+                await _dbContext.SaveChangesAsync();
+                return Ok(MapearParaDto(existente));
             }
             catch (Exception ex)
             {
@@ -257,20 +244,16 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var existente = await _supabase
-                    .From<Vaga>()
-                    .Where(v => v.Id == id)
-                    .Single();
+                var existente = await _dbContext.Vagas
+                    .FirstOrDefaultAsync(v => v.Id == id);
 
                 if (existente == null)
                     return NotFound(new { mensagem = "Vaga não encontrada" });
 
-                await _supabase
-                    .From<Vaga>()
-                    .Where(v => v.Id == id)
-                    .Delete();
+                _dbContext.Vagas.Remove(existente);
+                await _dbContext.SaveChangesAsync();
 
-                return NoContent(); // HTTP 204
+                return NoContent();
             }
             catch (Exception ex)
             {
@@ -318,24 +301,21 @@ namespace OpenDoors.Api.Controllers
          {
              try
              {
-                 var matches = await _supabase
-                     .From<Match>()
+                 var matches = await _dbContext.Matches
                      .Where(m => m.EstudanteId == estudanteId)
-                     .Order("score_total", Supabase.Postgrest.Constants.Ordering.Descending)
-                     .Limit(60)
-                     .Get();
+                     .OrderByDescending(m => m.ScoreTotal)
+                     .Take(60)
+                     .ToListAsync();
 
                  var vagasCache = new Dictionary<int, Vaga>();
                  var candidatos = new List<(Match match, Vaga vaga)>();
 
-                 foreach (var match in matches.Models)
+                 foreach (var match in matches)
                  {
                      if (!vagasCache.TryGetValue(match.VagaId, out var vaga))
                      {
-                         vaga = await _supabase
-                             .From<Vaga>()
-                             .Where(v => v.Id == match.VagaId)
-                             .Single();
+                         vaga = await _dbContext.Vagas
+                             .FirstOrDefaultAsync(v => v.Id == match.VagaId);
 
                          if (vaga != null)
                              vagasCache[match.VagaId] = vaga;

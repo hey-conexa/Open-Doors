@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Middleware;
 using OpenDoors.Api.Models;
 using OpenDoors.Api.Services;
@@ -12,12 +14,12 @@ namespace OpenDoors.Api.Controllers
     [Route("api/[controller]")]
     public class EstudantesController : ControllerBase
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
         private readonly LoginService _loginService;
 
-        public EstudantesController(Supabase.Client supabase, LoginService loginService)
+        public EstudantesController(AppDbContext dbContext, LoginService loginService)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
             _loginService = loginService;
         }
 
@@ -28,8 +30,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase.From<Estudante>().Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                var resultado = await _dbContext.Estudantes.ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -45,11 +47,10 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Estudante>()
+                var resultado = await _dbContext.Estudantes
                     .Where(e => e.Status == "ativo")
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -65,10 +66,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Estudante>()
-                    .Where(e => e.Id == id)
-                    .Single();
+                var resultado = await _dbContext.Estudantes
+                    .FirstOrDefaultAsync(e => e.Id == id);
 
                 if (resultado == null)
                     return NotFound(new { mensagem = "Estudante não encontrado" });
@@ -101,12 +100,10 @@ namespace OpenDoors.Api.Controllers
                     return BadRequest(new { erro = "Senha é obrigatória" });
 
                 // Verifica se o email já está cadastrado
-                var emailJaCadastrado = await _supabase
-                    .From<Login>()
-                    .Where(l => l.Email == dto.Email)
-                    .Get();
+                var emailJaCadastrado = await _dbContext.Logins
+                    .AnyAsync(l => l.Email == dto.Email);
 
-                if (emailJaCadastrado.Models != null && emailJaCadastrado.Models.Count > 0)
+                if (emailJaCadastrado)
                     return BadRequest(new { erro = "Email já cadastrado no sistema" });
 
                 var novo = new Estudante
@@ -132,12 +129,10 @@ namespace OpenDoors.Api.Controllers
                     Status = dto.Status ?? "ativo"
                 };
 
-                var resultado = await _supabase.From<Estudante>().Insert(novo);
+                await _dbContext.Estudantes.AddAsync(novo);
+                await _dbContext.SaveChangesAsync();
 
-                if (resultado.Models == null || resultado.Models.Count == 0)
-                    return StatusCode(500, new { erro = "Falha ao criar estudante" });
-
-                var criado = MapearParaDto(resultado.Models[0]);
+                var criado = MapearParaDto(novo);
 
                 // Cria o login para o novo estudante
                 try
@@ -174,10 +169,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var existente = await _supabase
-                    .From<Estudante>()
-                    .Where(e => e.Id == id)
-                    .Single();
+                var existente = await _dbContext.Estudantes
+                    .FirstOrDefaultAsync(e => e.Id == id);
 
                 if (existente == null)
                     return NotFound(new { mensagem = "Estudante não encontrado" });
@@ -201,8 +194,9 @@ namespace OpenDoors.Api.Controllers
                 existente.TemTesteVocacional = dto.TemTesteVocacional;
                 existente.Status = dto.Status;
 
-                var resultado = await existente.Update<Estudante>();
-                return Ok(MapearParaDto(resultado.Models[0]));
+                _dbContext.Estudantes.Update(existente);
+                await _dbContext.SaveChangesAsync();
+                return Ok(MapearParaDto(existente));
             }
             catch (Exception ex)
             {
@@ -218,18 +212,14 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var existente = await _supabase
-                    .From<Estudante>()
-                    .Where(e => e.Id == id)
-                    .Single();
+                var existente = await _dbContext.Estudantes
+                    .FirstOrDefaultAsync(e => e.Id == id);
 
                 if (existente == null)
                     return NotFound(new { mensagem = "Estudante não encontrado" });
 
-                await _supabase
-                    .From<Estudante>()
-                    .Where(e => e.Id == id)
-                    .Delete();
+                _dbContext.Estudantes.Remove(existente);
+                await _dbContext.SaveChangesAsync();
 
                 return NoContent();
             }

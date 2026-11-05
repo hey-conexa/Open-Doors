@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.Exceptions;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Models;
 using OpenDoors.Api.DTOs;
 using BCrypt.Net;
@@ -11,12 +13,12 @@ namespace OpenDoors.Api.Services
     /// </summary>
     public class LoginService
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
         private readonly JwtService _jwtService;
 
-        public LoginService(Supabase.Client supabase, JwtService jwtService)
+        public LoginService(AppDbContext dbContext, JwtService jwtService)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
             _jwtService = jwtService;
         }
 
@@ -40,10 +42,8 @@ namespace OpenDoors.Api.Services
                 throw new MissingRequiredFieldException("ContaId");
 
             // Busca a conta no banco de dados pela chave primária ContaId
-            var loginResult = await _supabase
-                .From<Login>()
-                .Where(l => l.ContaId == dto.ContaId)
-                .Single();
+            var loginResult = await _dbContext.Logins
+                .FirstOrDefaultAsync(l => l.ContaId == dto.ContaId);
 
             if (loginResult == null)
                 throw new InvalidCredentialsException();
@@ -94,12 +94,10 @@ namespace OpenDoors.Api.Services
             };
 
             // Insere no banco de dados
-            var resultado = await _supabase.From<Login>().Insert(novoLogin);
+            await _dbContext.Logins.AddAsync(novoLogin);
+            await _dbContext.SaveChangesAsync();
 
-            if (resultado.Models == null || resultado.Models.Count == 0)
-                throw new Exception("Falha ao criar login");
-
-            return resultado.Models[0];
+            return novoLogin;
         }
     }
 }
