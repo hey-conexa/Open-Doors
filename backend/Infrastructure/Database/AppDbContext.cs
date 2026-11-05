@@ -30,6 +30,9 @@ namespace OpenDoors.Api.Infrastructure.Database
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Ignore(typeof(DbContextOptions<>));
+            modelBuilder.Ignore(typeof(DbContextOptions));
+
             // ============================================
             // EMPRESA
             // ============================================
