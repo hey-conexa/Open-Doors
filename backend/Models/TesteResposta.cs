@@ -16,5 +16,9 @@ namespace OpenDoors.Api.Models
         public string Pergunta { get; set; } = string.Empty;
 
         public string Resposta { get; set; } = string.Empty;
+
+        public DateTime? CriadoEm { get; set; }
+
+        public DateTime? AtualizadoEm { get; set; }
     }
 }

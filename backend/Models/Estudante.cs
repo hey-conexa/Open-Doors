@@ -13,7 +13,7 @@ namespace OpenDoors.Api.Models
 
         public string? Cpf { get; set; }
 
-        public DateTime? DataNascimento { get; set; }
+        public DateOnly? DataNascimento { get; set; }
 
         public string? Cidade { get; set; }
 

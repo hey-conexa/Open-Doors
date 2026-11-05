@@ -7,7 +7,7 @@ namespace OpenDoors.Api.DTOs
         public string Email { get; set; } = string.Empty;
         public string? Telefone { get; set; }
         public string? Cpf { get; set; }
-        public DateTime? DataNascimento { get; set; }
+        public DateOnly? DataNascimento { get; set; }
         public string? Cidade { get; set; }
         public string? Estado { get; set; }
         public string? FotoPerfilUrl { get; set; }

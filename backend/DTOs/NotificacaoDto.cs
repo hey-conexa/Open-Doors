@@ -14,5 +14,6 @@ namespace OpenDoors.Api.DTOs
         public bool? Lida { get; set; }
         public DateTime? DataLeitura { get; set; }
         public DateTime? CriadoEm { get; set; }
+        public DateTime? AtualizadoEm { get; set; }
     }
 }

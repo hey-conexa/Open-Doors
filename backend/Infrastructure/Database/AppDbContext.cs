@@ -26,6 +26,12 @@ namespace OpenDoors.Api.Infrastructure.Database
         public DbSet<PerguntaTeste> PerguntasTeste { get; set; } = null!;
         public DbSet<TesteResposta> TestesRespostas { get; set; } = null!;
 
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            configurationBuilder.Properties<DateTime>().HaveColumnType("timestamp with time zone");
+            configurationBuilder.Properties<DateTime?>().HaveColumnType("timestamp with time zone");
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -64,8 +70,8 @@ namespace OpenDoors.Api.Infrastructure.Database
                 entity.Property(e => e.TotalContratacoes).HasColumnName("total_contratacoes").HasColumnType("integer");
                 entity.Property(e => e.CriadoPorAdmin).HasColumnName("criado_por_admin").HasColumnType("boolean");
                 entity.Property(e => e.Status).HasColumnName("status").HasColumnType("text");
-                entity.Property(e => e.CriadoEm).HasColumnName("criado_em").HasColumnType("timestamp without time zone");
-                entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em").HasColumnType("timestamp without time zone");
+                entity.Property(e => e.CriadoEm).HasColumnName("criado_em");
+                entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em");
             });
 
             // ============================================
@@ -83,7 +89,7 @@ namespace OpenDoors.Api.Infrastructure.Database
                 entity.Property(e => e.Email).HasColumnName("email").HasColumnType("text").IsRequired();
                 entity.Property(e => e.Telefone).HasColumnName("telefone").HasColumnType("text");
                 entity.Property(e => e.Cpf).HasColumnName("cpf").HasColumnType("text");
-                entity.Property(e => e.DataNascimento).HasColumnName("data_nascimento").HasColumnType("timestamp without time zone");
+                entity.Property(e => e.DataNascimento).HasColumnName("data_nascimento");
                 entity.Property(e => e.Cidade).HasColumnName("cidade").HasColumnType("text");
                 entity.Property(e => e.Estado).HasColumnName("estado").HasColumnType("text");
                 entity.Property(e => e.FotoPerfilUrl).HasColumnName("foto_perfil_url").HasColumnType("text");
@@ -97,8 +103,8 @@ namespace OpenDoors.Api.Infrastructure.Database
                 entity.Property(e => e.TemCurriculo).HasColumnName("tem_curriculo").HasColumnType("boolean");
                 entity.Property(e => e.TemTesteVocacional).HasColumnName("tem_teste_vocacional").HasColumnType("boolean");
                 entity.Property(e => e.Status).HasColumnName("status").HasColumnType("text");
-                entity.Property(e => e.CriadoEm).HasColumnName("criado_em").HasColumnType("timestamp without time zone");
-                entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em").HasColumnType("timestamp without time zone");
+                entity.Property(e => e.CriadoEm).HasColumnName("criado_em");
+                entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em");
             });
 
             // ============================================
@@ -130,9 +136,9 @@ namespace OpenDoors.Api.Infrastructure.Database
                 entity.Property(e => e.VagasDisponiveis).HasColumnName("vagas_disponiveis").HasColumnType("integer");
                 entity.Property(e => e.CandidaturasRecebidas).HasColumnName("candidaturas_recebidas").HasColumnType("integer");
                 entity.Property(e => e.Status).HasColumnName("status").HasColumnType("text");
-                entity.Property(e => e.CriadoEm).HasColumnName("criado_em").HasColumnType("timestamp without time zone");
-                entity.Property(e => e.ExpiraEm).HasColumnName("expira_em").HasColumnType("timestamp without time zone");
-                entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em").HasColumnType("timestamp without time zone");
+                entity.Property(e => e.CriadoEm).HasColumnName("criado_em");
+                entity.Property(e => e.ExpiraEm).HasColumnName("expira_em");
+                entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em");
 
                 // FK para Empresa
                 entity.HasOne<Empresa>()
@@ -160,9 +166,9 @@ namespace OpenDoors.Api.Infrastructure.Database
                 entity.Property(e => e.ScoreCompatibilidade).HasColumnName("score_compatibilidade").HasColumnType("numeric");
                 entity.Property(e => e.PosicaoRanking).HasColumnName("posicao_ranking").HasColumnType("integer");
                 entity.Property(e => e.VisualizadoEmpresa).HasColumnName("visualizado_empresa").HasColumnType("boolean");
-                entity.Property(e => e.DataVisualizacao).HasColumnName("data_visualizacao").HasColumnType("timestamp without time zone");
-                entity.Property(e => e.CriadoEm).HasColumnName("criado_em").HasColumnType("timestamp without time zone");
-                entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em").HasColumnType("timestamp without time zone");
+                entity.Property(e => e.DataVisualizacao).HasColumnName("data_visualizacao");
+                entity.Property(e => e.CriadoEm).HasColumnName("criado_em");
+                entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em");
 
                 // FKs
                 entity.HasOne<Estudante>()
@@ -195,7 +201,7 @@ namespace OpenDoors.Api.Infrastructure.Database
                 entity.Property(e => e.CandidaturaId).HasColumnName("candidatura_id").HasColumnType("integer").IsRequired();
                 entity.Property(e => e.Status).HasColumnName("status").HasColumnType("text").IsRequired();
                 entity.Property(e => e.Observacao).HasColumnName("observacao").HasColumnType("text");
-                entity.Property(e => e.CriadoEm).HasColumnName("criado_em").HasColumnType("timestamp without time zone");
+                entity.Property(e => e.CriadoEm).HasColumnName("criado_em");
 
                 // FK para Candidatura
                 entity.HasOne<Candidatura>()
@@ -225,8 +231,8 @@ namespace OpenDoors.Api.Infrastructure.Database
                 entity.Property(e => e.PontosFortes).HasColumnName("pontos_fortes").HasColumnType("text[]");
                 entity.Property(e => e.PontosFracos).HasColumnName("pontos_fracos").HasColumnType("text[]");
                 entity.Property(e => e.Justificativa).HasColumnName("justificativa").HasColumnType("text");
-                entity.Property(e => e.GeradoEm).HasColumnName("gerado_em").HasColumnType("timestamp without time zone");
-                entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em").HasColumnType("timestamp without time zone  ");
+                entity.Property(e => e.GeradoEm).HasColumnName("gerado_em");
+                entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em");
 
                 // FKs
                 entity.HasOne<Estudante>()
@@ -351,6 +357,8 @@ namespace OpenDoors.Api.Infrastructure.Database
                 entity.Property(e => e.PerguntaId).HasColumnName("pergunta_id").IsRequired();
                 entity.Property(e => e.Pergunta).HasColumnName("pergunta").IsRequired();
                 entity.Property(e => e.Resposta).HasColumnName("resposta").IsRequired();
+                entity.Property(e => e.CriadoEm).HasColumnName("criado_em");
+                entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em");
 
                 // FKs
                 entity.HasOne<TesteVocacional>()
