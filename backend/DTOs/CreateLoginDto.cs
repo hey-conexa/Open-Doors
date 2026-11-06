@@ -8,7 +8,7 @@ namespace OpenDoors.Api.DTOs
     public class CreateLoginDto
     {
         /// <summary>
-        /// UUID da conta associada (referência ao usuário autenticado no Supabase Auth).
+        /// UUID da conta associada (Id do estudante ou da empresa).
         /// </summary>
         public Guid ContaId { get; set; }
 

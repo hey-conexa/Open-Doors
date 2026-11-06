@@ -1,5 +1,3 @@
-using Supabase.Postgrest.Attributes;
-using Supabase.Postgrest.Models;
 
 namespace OpenDoors.Api.Models
 {

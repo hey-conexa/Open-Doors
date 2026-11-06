@@ -83,6 +83,27 @@ namespace OpenDoors.Api.Controllers
             }
         }
 
+        // GET /api/estudantes/{id}/curriculo — baixa o PDF guardado no banco
+        // Pode baixar: o próprio estudante ou qualquer empresa (para avaliar candidatos)
+        [AuthorizeRole(TiposUsuario.Estudante, TiposUsuario.Empresa)]
+        [HttpGet("{id}/curriculo")]
+        public async Task<IActionResult> BaixarCurriculo(Guid id)
+        {
+            var ehEmpresa = User.FindFirst("tipo_usuario")?.Value == nameof(TiposUsuario.Empresa);
+            var ehDono = Guid.TryParse(User.FindFirst("conta_id")?.Value, out var contaId) && contaId == id;
+            if (!ehEmpresa && !ehDono)
+                return Forbid();
+
+            var arquivo = await _dbContext.Curriculos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.EstudanteId == id);
+
+            if (arquivo == null)
+                return NotFound(new { mensagem = "Este estudante ainda não enviou currículo" });
+
+            return File(arquivo.Conteudo, arquivo.ContentType, arquivo.NomeArquivo);
+        }
+
         // POST /api/estudantes
         [AllowAnonymous]
         [HttpPost]

@@ -2,7 +2,7 @@ namespace OpenDoors.Api.Models
 {
     public class Estudante
     {
-        // UUID vindo do Supabase Auth (igual a Empresa)
+        // UUID gerado pelo backend no cadastro (igual a Empresa)
         public Guid Id { get; set; }
 
         public string Nome { get; set; } = string.Empty;

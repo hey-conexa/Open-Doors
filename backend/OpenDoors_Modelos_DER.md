@@ -1,6 +1,7 @@
 # OpenDoors — Documentação dos Modelos para Diagrama ER e ORM
 
 > **Objetivo:** servir de base para a criação do Diagrama de Entidade-Relacionamento (DER) e posterior modelagem de ORM, na migração do Supabase para um banco em nuvem.
+> **Situação atual:** a migração foi concluída. O projeto não usa mais o Supabase: os dados ficam no PostgreSQL via EF Core (`AppDbContext` + migrations), o login é próprio (BCrypt + JWT) e o PDF do currículo fica na tabela `curriculos`. Este documento descreve os modelos de antes da migração; o schema atual está nas migrations.
 > **Origem:** classes C# do namespace `OpenDoors.Api.Models` (pasta `Model`), anotadas com `[Table]`, `[Column]` e `[PrimaryKey]` (Supabase / postgrest-csharp).
 > **Princípio:** nenhuma informação foi inventada ou alterada. Apenas os nomes foram padronizados para SQL. O que não está explícito no código está em [Pontos de Atenção](#9-pontos-de-atenção-e-premissas-a-validar).
 
@@ -83,11 +84,11 @@ Também existe o `enum TiposUsuario` (`Estudante`, `Empresa`), declarado junto �
 ### 3.1 `Empresa`
 
 - **Classe C#:** `Empresa` | **Tabela original:** `empresas`
-- **PK:** `id` (`UUID`, **enviada pela aplicação**, originada no Supabase Auth)
+- **PK:** `id` (`UUID`, **gerada pelo backend** no cadastro; antes vinha do Supabase Auth)
 
 | Atributo (SQL) | Coluna original / Propriedade C# | Tipo C# | Tipo SQL | Nulável | Chave | Observações |
 |---|---|---|---|---|---|---|
-| `id` | `id` / `Id` | `Guid` | `UUID` | Não | PK | Vem do Supabase Auth; não é gerado pelo banco. |
+| `id` | `id` / `Id` | `Guid` | `UUID` | Não | PK | Gerado pelo backend no cadastro (é o `conta_id` do login); não é gerado pelo banco. |
 | `razao_social` | `razao_social` / `RazaoSocial` | `string` | `VARCHAR` | Não | | Padrão C#: `string.Empty` |
 | `nome_fantasia` | `nome_fantasia` / `NomeFantasia` | `string?` | `VARCHAR` | Sim | | |
 | `cnpj` | `cnpj` / `Cnpj` | `string` | `VARCHAR` | Não | | Padrão C#: `string.Empty` |
@@ -114,11 +115,11 @@ Também existe o `enum TiposUsuario` (`Estudante`, `Empresa`), declarado junto �
 ### 3.2 `Estudante`
 
 - **Classe C#:** `Estudante` | **Tabela original:** `estudantes`
-- **PK:** `id` (`UUID`, **enviada pela aplicação**, originada no Supabase Auth, igual a `Empresa`)
+- **PK:** `id` (`UUID`, **gerada pelo backend** no cadastro, igual a `Empresa`)
 
 | Atributo (SQL) | Coluna original / Propriedade C# | Tipo C# | Tipo SQL | Nulável | Chave | Observações |
 |---|---|---|---|---|---|---|
-| `id` | `id` / `Id` | `Guid` | `UUID` | Não | PK | Vem do Supabase Auth; não é gerado pelo banco. |
+| `id` | `id` / `Id` | `Guid` | `UUID` | Não | PK | Gerado pelo backend no cadastro (é o `conta_id` do login); não é gerado pelo banco. |
 | `nome` | `nome` / `Nome` | `string` | `VARCHAR` | Não | | Padrão C#: `string.Empty` |
 | `email` | `email` / `Email` | `string` | `VARCHAR` | Não | | Padrão C#: `string.Empty` |
 | `telefone` | `telefone` / `Telefone` | `string?` | `VARCHAR` | Sim | | |
@@ -568,10 +569,10 @@ Documentados como `TEXT[]`. Nem todo banco em nuvem suporta arrays; a alternativ
 - Contadores: `Empresa.vagas_ativas`, `Empresa.total_contratacoes`, `Vaga.candidaturas_recebidas`. O código não indica se são mantidos por trigger ou pela aplicação.
 - `Teste_Resposta.pergunta` armazena o texto da pergunta, que também existe em `Pergunta_Teste.pergunta`.
 
-### 9.6 Dependência do Supabase Auth
-- `Empresa.id` e `Estudante.id` são UUIDs **originados no Supabase Auth** e enviados pela aplicação.
-- Ao sair do Supabase, será necessário definir a origem desses UUIDs (geração própria ou outro provedor de identidade).
-- A entidade `Login` possui `email` e `senha`, além do `email` presente em `Empresa` e `Estudante`. O código não esclarece o formato de armazenamento da `senha` (texto ou hash) nem a relação com o Supabase Auth.
+### 9.6 Dependência do Supabase Auth (resolvida)
+- `Empresa.id` e `Estudante.id` agora são UUIDs **gerados pelo backend** no cadastro e usados como `conta_id` no `Login` e no token JWT.
+- `Login.senha` guarda o **hash BCrypt** da senha. O e-mail do `Login` é mantido igual ao do perfil (`Empresa`/`Estudante`).
+- Contas criadas pelo Google recebem uma senha aleatória; a pessoa pode definir uma pelo "esqueci minha senha".
 
 ### 9.7 Tipos e domínios não especificados
 - Tamanhos de `VARCHAR`, precisão/escala de `DECIMAL` e uso de fuso horário em `TIMESTAMP` não constam no código.

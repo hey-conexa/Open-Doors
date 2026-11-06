@@ -1,12 +1,9 @@
-using Supabase.Postgrest.Attributes;
-using Supabase.Postgrest.Models;
 
 namespace OpenDoors.Api.Models
 {
-    // [Table("empresas")]
     public class Empresa
     {
-        // UUID vindo do Supabase Auth
+        // UUID gerado pelo backend no cadastro (é o conta_id do login)
         public Guid Id { get; set; }
 
         public string RazaoSocial { get; set; } = string.Empty;

@@ -42,21 +42,13 @@ namespace OpenDoors.Api.Services
             var habilidades = estudante.HabilidadesExtraidas ?? new List<string>();
             var temCurriculo = estudante.TemCurriculo == true || !string.IsNullOrWhiteSpace(estudante.CurriculoUrl);
 
-            // Se tiver currículo salvo, tenta buscar o texto do PDF para enriquecer a análise
-            var textoCurriculo = "";
-            if (!string.IsNullOrWhiteSpace(estudante.CurriculoUrl))
-            {
-                try
-                {
-                    using var http = new System.Net.Http.HttpClient();
-                    var pdfBytes = await http.GetByteArrayAsync(estudante.CurriculoUrl);
-                    using var pdfStream = new System.IO.MemoryStream(pdfBytes);
-                    textoCurriculo = AnalisarCurriculoService.ExtrairTextoPdf(pdfStream);
-                    if (textoCurriculo.Length > 2000)
-                        textoCurriculo = textoCurriculo.Substring(0, 2000) + "...";
-                }
-                catch { /* se falhar, usa só as habilidades */ }
-            }
+            // Se tiver currículo salvo, usa o texto já extraído do PDF para enriquecer a análise
+            var textoCurriculo = await _dbContext.Curriculos
+                .Where(c => c.EstudanteId == estudanteId)
+                .Select(c => c.Texto)
+                .FirstOrDefaultAsync() ?? "";
+            if (textoCurriculo.Length > 2000)
+                textoCurriculo = textoCurriculo.Substring(0, 2000) + "...";
 
             var contextoEstudante = $"""
                 Estudante:

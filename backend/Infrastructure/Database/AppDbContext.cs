@@ -22,6 +22,7 @@ namespace OpenDoors.Api.Infrastructure.Database
         public DbSet<Match> Matches { get; set; } = null!;
         public DbSet<Login> Logins { get; set; } = null!;
         public DbSet<CodigoRedefinicaoSenha> CodigosRedefinicaoSenha { get; set; } = null!;
+        public DbSet<CurriculoArquivo> Curriculos { get; set; } = null!;
         public DbSet<Notificacao> Notificacoes { get; set; } = null!;
         public DbSet<TesteVocacional> TestesVocacionais { get; set; } = null!;
         public DbSet<PerguntaTeste> PerguntasTeste { get; set; } = null!;
@@ -284,6 +285,26 @@ namespace OpenDoors.Api.Infrastructure.Database
                 entity.Property(e => e.Usado).HasColumnName("usado").IsRequired();
 
                 entity.HasIndex(e => e.ContaId);
+            });
+
+            // ============================================
+            // CURRICULO (PDF guardado no banco)
+            // ============================================
+            modelBuilder.Entity<CurriculoArquivo>(entity =>
+            {
+                entity.ToTable("curriculos");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd(); // Auto-incremento
+
+                entity.Property(e => e.EstudanteId).HasColumnName("estudante_id").IsRequired();
+                entity.Property(e => e.NomeArquivo).HasColumnName("nome_arquivo").IsRequired();
+                entity.Property(e => e.ContentType).HasColumnName("content_type").IsRequired();
+                entity.Property(e => e.Conteudo).HasColumnName("conteudo").HasColumnType("bytea").IsRequired();
+                entity.Property(e => e.Texto).HasColumnName("texto").IsRequired();
+                entity.Property(e => e.EnviadoEm).HasColumnName("enviado_em").IsRequired();
+
+                entity.HasIndex(e => e.EstudanteId).IsUnique();
+                entity.HasOne<Estudante>().WithMany().HasForeignKey(e => e.EstudanteId).OnDelete(DeleteBehavior.Cascade);
             });
 
             // ============================================

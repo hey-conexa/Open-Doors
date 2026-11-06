@@ -50,33 +50,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 // ============================================
-// CONFIGURAÇÃO DO SUPABASE
-// ============================================
-
-// Lê as configurações do appsettings.json + appsettings.Development.json
-var supabaseUrl = builder.Configuration["Supabase:Url"];
-var supabaseKey = builder.Configuration["Supabase:Key"];
-
-// Valida se as configurações foram carregadas
-if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseKey))
-{
-    throw new Exception("Configurações do Supabase não foram encontradas! Verifique appsettings.json e appsettings.Development.json");
-}
-
-// Cria a instância do cliente Supabase e registra como Singleton
-// (Singleton = uma única instância compartilhada na aplicação inteira, padrão de injeção de dependência)
-builder.Services.AddSingleton<Supabase.Client>(_ =>
-{
-    var options = new Supabase.SupabaseOptions
-    {
-        AutoConnectRealtime = true
-    };
-    var client = new Supabase.Client(supabaseUrl, supabaseKey, options);
-    client.InitializeAsync().Wait();
-    return client;
-});
-
-// ============================================
 // AUTENTICAÇÃO JWT (token próprio, gerado pelo JwtService)
 // ============================================
 

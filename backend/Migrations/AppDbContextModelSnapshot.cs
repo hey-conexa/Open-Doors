@@ -158,6 +158,50 @@ namespace OpenDoors.Api.Migrations
                     b.ToTable("codigos_redefinicao_senha", (string)null);
                 });
 
+            modelBuilder.Entity("OpenDoors.Api.Models.CurriculoArquivo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("content_type");
+
+                    b.Property<byte[]>("Conteudo")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("conteudo");
+
+                    b.Property<DateTime>("EnviadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("enviado_em");
+
+                    b.Property<Guid>("EstudanteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("estudante_id");
+
+                    b.Property<string>("NomeArquivo")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("nome_arquivo");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("texto");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EstudanteId")
+                        .IsUnique();
+
+                    b.ToTable("curriculos", (string)null);
+                });
+
             modelBuilder.Entity("OpenDoors.Api.Models.Empresa", b =>
                 {
                     b.Property<Guid>("Id")
@@ -771,6 +815,15 @@ namespace OpenDoors.Api.Migrations
                     b.HasOne("OpenDoors.Api.Models.Candidatura", null)
                         .WithMany()
                         .HasForeignKey("CandidaturaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OpenDoors.Api.Models.CurriculoArquivo", b =>
+                {
+                    b.HasOne("OpenDoors.Api.Models.Estudante", null)
+                        .WithMany()
+                        .HasForeignKey("EstudanteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
