@@ -851,3 +851,8 @@ input[type="month"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cu
 @media (max-width: 480px) {
   .theme-toggle span { display: none; }
 }
+
+/* Login com Google e redefinição de senha */
+.google-slot { display: flex; justify-content: center; align-items: center; min-height: 44px; }
+#reset-otp-error { display: block; font-size: 11px; color: var(--error); margin-top: 6px; min-height: 14px; }
+.social-row--single { grid-template-columns: 1fr; }

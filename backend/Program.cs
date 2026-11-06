@@ -121,6 +121,8 @@ builder.Services.AddScoped<OpenDoors.Api.Services.JoobleService>();
 
 builder.Services.AddScoped<OpenDoors.Api.Services.JwtService>();
 builder.Services.AddScoped<OpenDoors.Api.Services.LoginService>();
+builder.Services.AddSingleton<OpenDoors.Api.Services.GoogleAuthService>();
+builder.Services.AddScoped<OpenDoors.Api.Services.EmailService>();
 
 // ============================================
 // CONSTRUÇÃO E EXECUÇÃO DO APP

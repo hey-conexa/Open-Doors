@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Exceptions;
 using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Middleware;
 using OpenDoors.Api.Models;
@@ -15,11 +16,13 @@ namespace OpenDoors.Api.Controllers
     {
         private readonly AppDbContext _dbContext;
         private readonly LoginService _loginService;
+        private readonly GoogleAuthService _googleAuth;
 
-        public EmpresasController(AppDbContext dbContext, LoginService loginService)
+        public EmpresasController(AppDbContext dbContext, LoginService loginService, GoogleAuthService googleAuth)
         {
             _dbContext = dbContext;
             _loginService = loginService;
+            _googleAuth = googleAuth;
         }
 
         // GET /api/empresas
@@ -95,6 +98,14 @@ namespace OpenDoors.Api.Controllers
                 if (string.IsNullOrWhiteSpace(dto.Email))
                     return BadRequest(new { erro = "Email é obrigatório" });
 
+                // Cadastro pelo Google: o e-mail vem do token verificado e a senha não é necessária
+                if (!string.IsNullOrWhiteSpace(dto.GoogleCredential))
+                {
+                    var google = await _googleAuth.ValidarAsync(dto.GoogleCredential);
+                    dto.Email = google.Email;
+                    dto.Senha = LoginService.SenhaAleatoria();
+                }
+
                 if (string.IsNullOrWhiteSpace(dto.Senha) || dto.Senha.Length < LoginService.TamanhoMinimoSenha)
                     return BadRequest(new { erro = $"Senha é obrigatória (mínimo {LoginService.TamanhoMinimoSenha} caracteres)" });
 
@@ -142,6 +153,14 @@ namespace OpenDoors.Api.Controllers
 
                 var criada = MapearParaDto(nova);
                 return CreatedAtAction(nameof(BuscarPorId), new { id = criada.Id }, criada);
+            }
+            catch (AuthenticationException ex)
+            {
+                return BadRequest(new { erro = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(503, new { erro = ex.Message });
             }
             catch (Exception ex)
             {

@@ -21,6 +21,7 @@ namespace OpenDoors.Api.Infrastructure.Database
         public DbSet<CandidaturaHistorico> CandidaturasHistorico { get; set; } = null!;
         public DbSet<Match> Matches { get; set; } = null!;
         public DbSet<Login> Logins { get; set; } = null!;
+        public DbSet<CodigoRedefinicaoSenha> CodigosRedefinicaoSenha { get; set; } = null!;
         public DbSet<Notificacao> Notificacoes { get; set; } = null!;
         public DbSet<TesteVocacional> TestesVocacionais { get; set; } = null!;
         public DbSet<PerguntaTeste> PerguntasTeste { get; set; } = null!;
@@ -264,6 +265,25 @@ namespace OpenDoors.Api.Infrastructure.Database
                 entity.Property(e => e.Email).HasColumnName("email").IsRequired();
                 entity.Property(e => e.Senha).HasColumnName("senha").IsRequired();
                 entity.Property(e => e.TipoUsuario).HasColumnName("tipo_usuario").IsRequired();
+            });
+
+            // ============================================
+            // CODIGO DE REDEFINICAO DE SENHA
+            // ============================================
+            modelBuilder.Entity<CodigoRedefinicaoSenha>(entity =>
+            {
+                entity.ToTable("codigos_redefinicao_senha");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd(); // Auto-incremento
+
+                entity.Property(e => e.ContaId).HasColumnName("conta_id").IsRequired();
+                entity.Property(e => e.CodigoHash).HasColumnName("codigo_hash").IsRequired();
+                entity.Property(e => e.CriadoEm).HasColumnName("criado_em").IsRequired();
+                entity.Property(e => e.ExpiraEm).HasColumnName("expira_em").IsRequired();
+                entity.Property(e => e.Tentativas).HasColumnName("tentativas").IsRequired();
+                entity.Property(e => e.Usado).HasColumnName("usado").IsRequired();
+
+                entity.HasIndex(e => e.ContaId);
             });
 
             // ============================================

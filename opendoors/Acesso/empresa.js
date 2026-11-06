@@ -112,9 +112,11 @@ async function companyRegister() {
   if (!phone)   return showError('co-phone',   'Campo obrigatório.');
   if (cep.replace(/\D/g,'').length < 8)
                 return showError('co-cep',     'CEP inválido.');
-  if (!pw)      return showError('co-pw',      'Campo obrigatório.');
-  if (pw.length < 8)   return showError('co-pw',  'Mínimo 8 caracteres.');
-  if (pw !== pwc)      return showError('co-pwc', 'As senhas não coincidem.');
+  if (!googleCredentialCadastro) {
+    if (!pw)      return showError('co-pw',      'Campo obrigatório.');
+    if (pw.length < 8)   return showError('co-pw',  'Mínimo 8 caracteres.');
+    if (pw !== pwc)      return showError('co-pwc', 'As senhas não coincidem.');
+  }
   if (!terms)   return showError('co-terms-wrap', 'Aceite os termos para continuar.');
 
   const btn = document.querySelector('#screen-register .btn-primary');
@@ -127,7 +129,8 @@ async function companyRegister() {
       razaoSocial:      name,
       cnpj:             cnpj.replace(/\D/g,''),
       email:            email,
-      senha:            pw,
+      // Cadastro pelo Google dispensa senha: o backend valida o token
+      ...(googleCredentialCadastro ? { googleCredential: googleCredentialCadastro } : { senha: pw }),
       telefone:         phone,
       cep:              cep.replace(/\D/g,''),
       cidade:           localidade.trim(),
@@ -151,7 +154,10 @@ async function companyRegister() {
     }
 
     // 2. Entra com a conta recém-criada para obter o token
-    const auth = await apiLogin(email, pw);
+    const auth = googleCredentialCadastro
+      ? (await apiLoginGoogle(googleCredentialCadastro)).auth
+      : await apiLogin(email, pw);
+    googleCredentialCadastro = null;
     await carregarSessaoEmpresa(auth.contaId);
 
     // Mostra sucesso e redireciona
@@ -169,6 +175,52 @@ async function companyRegister() {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Criar conta'; btn.removeAttribute('aria-busy'); }
   }
+}
+
+// ──────────────────────────────────────────────
+// LOGIN COM GOOGLE — chamado pelo botão do Google (acesso-shared.js)
+// ──────────────────────────────────────────────
+async function onGoogleCredential(credential) {
+  clearErrors();
+  try {
+    const r = await apiLoginGoogle(credential);
+
+    // Ainda não tem conta: vai para o cadastro com nome e e-mail do Google
+    if (r.precisaCadastro) {
+      switchTab('register');
+      prepararCadastroGoogle(credential, r, {
+        nome: 'co-contact',
+        email: 'co-email',
+        senhaContainers: [document.getElementById('co-pw')?.closest('.field-row')]
+      });
+      return;
+    }
+
+    if (r.auth.tipoUsuario !== 'Empresa') {
+      clearAuth();
+      switchTab('login');
+      return showError('login-email', 'Esta conta é de estudante. Use o acesso para estudantes.');
+    }
+
+    await carregarSessaoEmpresa(r.auth.contaId);
+    redirectToPanel();
+  } catch (err) {
+    clearAuth();
+    switchTab('login');
+    showError('login-email', err.message || 'Não foi possível entrar com o Google.');
+    console.error(err);
+  }
+}
+
+// ──────────────────────────────────────────────
+// REDEFINIÇÃO DE SENHA — a lógica fica em acesso-shared.js
+// ──────────────────────────────────────────────
+function mostrarSucessoRedefinicao() {
+  document.getElementById('success-title').textContent = 'Senha redefinida!';
+  document.getElementById('success-msg').textContent = 'Sua nova senha já está valendo. Entre com ela para continuar.';
+  document.getElementById('success-meta').style.display = 'none';
+  document.getElementById('success-actions-reset').style.display = 'flex';
+  showScreen('screen-success');
 }
 
 // ──────────────────────────────────────────────

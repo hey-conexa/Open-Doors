@@ -39,24 +39,61 @@ function loginPageFor(tipoUsuario) {
     : '../Acesso/AcessoEstudantes.html';
 }
 
-// POST /api/login — guarda o token e devolve { token, expiraEm, contaId, tipoUsuario }
-async function apiLogin(email, senha) {
-  const res = await fetch(`${API}/api/login`, {
+// POST sem token; erro vira Error com .status e .dados (corpo da resposta)
+async function apiPost(path, body) {
+  const res = await fetch(`${API}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
-    body: JSON.stringify({ email, senha })
+    body: JSON.stringify(body)
   });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const error = new Error(err.erro || `Erro ${res.status}`);
     error.status = res.status;
+    error.dados = err;
     throw error;
   }
 
-  const auth = await res.json();
+  return res.status === 204 ? null : res.json();
+}
+
+// POST /api/login — guarda o token e devolve { token, expiraEm, contaId, tipoUsuario }
+async function apiLogin(email, senha) {
+  const auth = await apiPost('/api/login', { email, senha });
   setAuth(auth);
   return auth;
+}
+
+// POST /api/login/google — { auth } quando a conta existe; { precisaCadastro, email, nome } quando não existe
+async function apiLoginGoogle(credential) {
+  try {
+    const auth = await apiPost('/api/login/google', { credential });
+    setAuth(auth);
+    return { auth };
+  } catch (err) {
+    if (err.status === 404 && err.dados?.precisaCadastro) return err.dados;
+    throw err;
+  }
+}
+
+// GET /api/login/config — Client ID do Google (null se não configurado)
+let googleClientIdPromise = null;
+function apiGoogleClientId() {
+  googleClientIdPromise ??= fetch(`${API}/api/login/config`, { headers: { 'ngrok-skip-browser-warning': '1' } })
+    .then(res => res.ok ? res.json() : {})
+    .then(cfg => cfg.googleClientId || null)
+    .catch(() => null);
+  return googleClientIdPromise;
+}
+
+// "Esqueci minha senha": envia o código por e-mail / redefine com o código
+function apiEsqueciSenha(email) {
+  return apiPost('/api/login/esqueci-senha', { email });
+}
+
+function apiRedefinirSenha(email, codigo, novaSenha) {
+  return apiPost('/api/login/redefinir-senha', { email, codigo, novaSenha });
 }
 
 // fetch com o token; se a sessão expirou (401), volta para a tela de login

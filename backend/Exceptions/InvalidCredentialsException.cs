@@ -6,5 +6,7 @@ namespace OpenDoors.Api.Exceptions
     public class InvalidCredentialsException : AuthenticationException
     {
         public InvalidCredentialsException() : base("Email ou senha incorretos.") { }
+
+        public InvalidCredentialsException(string message) : base(message) { }
     }
 }

@@ -2,7 +2,44 @@
 
 // LOGIN SOCIAL
 function socialLogin(provider) {
-  alert(`Redirecionando para autenticação via ${provider}.\n(Integração real requer o SDK do provedor.)`);
+  if (provider === 'Google') {
+    alert('O login com Google ainda não está configurado neste servidor.');
+    return;
+  }
+  alert(`Login com ${provider} ainda não está disponível.`);
+}
+
+// LOGIN COM GOOGLE — chamado pelo botão do Google (acesso-shared.js)
+async function onGoogleCredential(credential) {
+  clearErrors();
+  try {
+    const r = await apiLoginGoogle(credential);
+
+    // Ainda não tem conta: vai para o cadastro com nome e e-mail do Google
+    if (r.precisaCadastro) {
+      showScreen('screen-register');
+      prepararCadastroGoogle(credential, r, {
+        nome: 'reg-name',
+        email: 'reg-email',
+        senhaContainers: ['reg-pw', 'reg-pwc'].map(id => document.getElementById(id)?.closest('.field'))
+      });
+      return;
+    }
+
+    if (r.auth.tipoUsuario !== 'Estudante') {
+      clearAuth();
+      showScreen('screen-login');
+      return showError('login-email', 'Esta conta é de empresa. Use o acesso para empresas.');
+    }
+
+    await carregarSessaoEstudante(r.auth.contaId);
+    showSuccess('Login realizado!', 'Identidade verificada com sucesso. Bem-vindo(a) de volta ao Open Doors!', 'login');
+  } catch (err) {
+    clearAuth();
+    showScreen('screen-login');
+    showError('login-email', err.message || 'Não foi possível entrar com o Google.');
+    console.error(err);
+  }
 }
 
 // MOSTRAR / OCULTAR SENHA
@@ -281,8 +318,10 @@ async function studentRegister() {
   if (!semestres)    return showError('reg-semestres',    'Selecione a duração do curso.');
   if (!turno)        return showError('reg-turno',        'Selecione o turno.');
   if (!conclusao)    return showError('reg-conclusao',    'Informe a data de conclusão.');
-  if (pw.length < 8) return showError('reg-pw',  'Mínimo 8 caracteres.');
-  if (pw !== pwc)    return showError('reg-pwc',  'As senhas não coincidem.');
+  if (!googleCredentialCadastro) {
+    if (pw.length < 8) return showError('reg-pw',  'Mínimo 8 caracteres.');
+    if (pw !== pwc)    return showError('reg-pwc',  'As senhas não coincidem.');
+  }
   if (!terms)        return showError('reg-terms-field', 'Aceite os termos para continuar.');
 
   const btn = document.querySelector('#screen-register .btn-primary');
@@ -295,7 +334,8 @@ async function studentRegister() {
     const payload = {
       nome:              name,
       email:             email,
-      senha:             pw,
+      // Cadastro pelo Google dispensa senha: o backend valida o token
+      ...(googleCredentialCadastro ? { googleCredential: googleCredentialCadastro } : { senha: pw }),
       cpf:               cpf.replace(/\D/g, ''),
       telefone:          phone,
       dataNascimento:    dob,
@@ -324,7 +364,10 @@ async function studentRegister() {
     }
 
     // 2. Entra com a conta recém-criada para obter o token
-    const auth = await apiLogin(email, pw);
+    const auth = googleCredentialCadastro
+      ? (await apiLoginGoogle(googleCredentialCadastro)).auth
+      : await apiLogin(email, pw);
+    googleCredentialCadastro = null;
     await carregarSessaoEstudante(auth.contaId);
 
     showSuccess(
@@ -344,14 +387,10 @@ async function studentRegister() {
 }
 
 // ==============================================================
-// REDEFINIÇÃO DE SENHA
+// REDEFINIÇÃO DE SENHA — a lógica fica em acesso-shared.js
 // ==============================================================
-// O backend ainda não envia e-mails, então a recuperação por e-mail não está disponível.
-// Com a conta logada, a senha pode ser trocada em "Segurança" no painel.
-function sendResetCode() {
-  clearErrors();
-  showError('forgot-email',
-    'A recuperação de senha por e-mail ainda não está disponível. Entre em contato com o suporte do Open Doors.');
+function mostrarSucessoRedefinicao() {
+  showSuccess('Senha redefinida!', 'Sua nova senha já está valendo. Entre com ela para continuar.', 'reset');
 }
 
 function showSuccess(title, msg, flow) {
