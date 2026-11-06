@@ -1,12 +1,9 @@
 /* Lógica exclusiva da página AcessoEstudantes */
 
 // LOGIN SOCIAL
-function socialLogin(provider) {
-  if (provider === 'Google') {
-    alert('O login com Google ainda não está configurado neste servidor.');
-    return;
-  }
-  alert(`Login com ${provider} ainda não está disponível.`);
+// Botão reserva do Google: só aparece quando o Google não está configurado no backend
+function socialLogin() {
+  alert('O login com Google ainda não está configurado neste servidor.');
 }
 
 // LOGIN COM GOOGLE — chamado pelo botão do Google (acesso-shared.js)
