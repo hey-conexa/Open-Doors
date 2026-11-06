@@ -329,8 +329,8 @@ async function studentRegister() {
 
     showSuccess(
       `Bem-vindo(a), ${name.split(' ')[0]}!`,
-      'Conta criada com sucesso.',
-      'register'
+      'Conta criada com sucesso. Você já está conectado(a).',
+      'login'   // já entrou: mostra o botão para a Área do Estudante
     );
 
   } catch (err) {
