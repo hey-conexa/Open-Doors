@@ -1,7 +1,7 @@
 namespace OpenDoors.Api.Exceptions
 {
     /// <summary>
-    /// ExceÁ„o lanÁada quando email ou senha est„o incorretos.
+    /// Exce√ß√£o lan√ßada quando email ou senha est√£o incorretos.
     /// </summary>
     public class InvalidCredentialsException : AuthenticationException
     {

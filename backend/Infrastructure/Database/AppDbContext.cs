@@ -48,7 +48,7 @@ namespace OpenDoors.Api.Infrastructure.Database
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id)
                     .HasColumnType("uuid")
-                    .ValueGeneratedNever(); // UUID enviada pela aplicação
+                    .ValueGeneratedNever(); // UUID enviada pela aplicaÃ§Ã£o
 
                 entity.Property(e => e.RazaoSocial).HasColumnName("razao_social").HasColumnType("text").IsRequired();
                 entity.Property(e => e.NomeFantasia).HasColumnName("nome_fantasia").HasColumnType("text");
@@ -83,7 +83,7 @@ namespace OpenDoors.Api.Infrastructure.Database
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id)
                     .HasColumnType("uuid")
-                    .ValueGeneratedNever(); // UUID enviada pela aplicação
+                    .ValueGeneratedNever(); // UUID enviada pela aplicaÃ§Ã£o
 
                 entity.Property(e => e.Nome).HasColumnName("nome").HasColumnType("text").IsRequired();
                 entity.Property(e => e.Email).HasColumnName("email").HasColumnType("text").IsRequired();

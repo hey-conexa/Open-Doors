@@ -1,7 +1,7 @@
 namespace OpenDoors.Api.Exceptions
 {
     /// <summary>
-    /// ExceÁ„o lanÁada quando as credenciais de autenticaÁ„o s„o inv·lidas.
+    /// Exce√ß√£o lan√ßada quando as credenciais de autentica√ß√£o s√£o inv√°lidas.
     /// </summary>
     public class AuthenticationException : Exception
     {

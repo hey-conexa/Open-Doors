@@ -123,13 +123,11 @@ namespace OpenDoors.Api.Controllers
                 if (string.IsNullOrWhiteSpace(dto.Titulo))
                     return BadRequest(new { erro = "O título da vaga é obrigatório" });
 
-                if (dto.EmpresaId == Guid.Empty)
-                    return BadRequest(new { erro = "A empresa é obrigatória" });
-
                 // Cria a Model a partir do DTO de entrada
                 var novaVaga = new Vaga
                 {
-                    EmpresaId = dto.EmpresaId,
+                    // A vaga sempre pertence à empresa do token, não ao valor enviado no corpo
+                    EmpresaId = EmpresaLogadaId(),
                     Titulo = dto.Titulo,
                     Descricao = dto.Descricao,
                     Area = dto.Area,
@@ -178,6 +176,10 @@ namespace OpenDoors.Api.Controllers
                 if (existente == null)
                     return NotFound(new { mensagem = "Vaga não encontrada" });
 
+                // Só a empresa dona da vaga pode alterá-la
+                if (existente.EmpresaId != EmpresaLogadaId())
+                    return Forbid();
+
                 existente.Titulo = dto.Titulo;
                 existente.Descricao = dto.Descricao;
                 existente.Area = dto.Area;
@@ -223,6 +225,10 @@ namespace OpenDoors.Api.Controllers
                 if (existente == null)
                     return NotFound(new { mensagem = "Vaga não encontrada" });
 
+                // Só a empresa dona da vaga pode alterá-la
+                if (existente.EmpresaId != EmpresaLogadaId())
+                    return Forbid();
+
                 existente.Status = novoStatus;
                 _dbContext.Vagas.Update(existente);
                 await _dbContext.SaveChangesAsync();
@@ -250,6 +256,10 @@ namespace OpenDoors.Api.Controllers
                 if (existente == null)
                     return NotFound(new { mensagem = "Vaga não encontrada" });
 
+                // Só a empresa dona da vaga pode alterá-la
+                if (existente.EmpresaId != EmpresaLogadaId())
+                    return Forbid();
+
                 _dbContext.Vagas.Remove(existente);
                 await _dbContext.SaveChangesAsync();
 
@@ -260,6 +270,12 @@ namespace OpenDoors.Api.Controllers
                 return StatusCode(500, new { erro = ex.Message });
             }
         }
+
+        // ===========================================
+        // Id da empresa autenticada (claim conta_id do token)
+        // ===========================================
+        private Guid EmpresaLogadaId() =>
+            Guid.TryParse(User.FindFirst("conta_id")?.Value, out var id) ? id : Guid.Empty;
 
         // ===========================================
         // MÉTODO PRIVADO — Converte Model em DTO

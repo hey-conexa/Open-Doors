@@ -87,30 +87,25 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                if (dto.Id == Guid.Empty)
-                    return BadRequest(new { erro = "O Id (UUID do Supabase Auth) é obrigatório" });
-
                 if (string.IsNullOrWhiteSpace(dto.Nome))
                     return BadRequest(new { erro = "Nome é obrigatório" });
 
                 if (string.IsNullOrWhiteSpace(dto.Email))
                     return BadRequest(new { erro = "Email é obrigatório" });
 
-                if (string.IsNullOrWhiteSpace(dto.Senha))
-                    return BadRequest(new { erro = "Senha é obrigatória" });
+                if (string.IsNullOrWhiteSpace(dto.Senha) || dto.Senha.Length < LoginService.TamanhoMinimoSenha)
+                    return BadRequest(new { erro = $"Senha é obrigatória (mínimo {LoginService.TamanhoMinimoSenha} caracteres)" });
 
                 // Verifica se o email já está cadastrado
-                var emailJaCadastrado = await _dbContext.Logins
-                    .AnyAsync(l => l.Email == dto.Email);
-
-                if (emailJaCadastrado)
-                    return BadRequest(new { erro = "Email já cadastrado no sistema" });
+                if (await _loginService.EmailJaCadastradoAsync(dto.Email))
+                    return Conflict(new { erro = "Email já cadastrado no sistema" });
 
                 var novo = new Estudante
                 {
-                    Id = dto.Id,
+                    // O Id da conta é gerado pelo backend e vira o conta_id do login/token
+                    Id = Guid.NewGuid(),
                     Nome = dto.Nome,
-                    Email = dto.Email,
+                    Email = LoginService.NormalizarEmail(dto.Email),
                     Telefone = dto.Telefone,
                     Cpf = dto.Cpf,
                     DataNascimento = dto.DataNascimento,
@@ -130,29 +125,19 @@ namespace OpenDoors.Api.Controllers
                 };
 
                 await _dbContext.Estudantes.AddAsync(novo);
+
+                // Perfil e login são gravados juntos: se um falhar, nenhum é salvo
+                _loginService.AdicionarLogin(new CreateLoginDto
+                {
+                    ContaId = novo.Id,
+                    Email = dto.Email,
+                    Senha = dto.Senha,
+                    TipoUsuario = TiposUsuario.Estudante
+                });
+
                 await _dbContext.SaveChangesAsync();
 
                 var criado = MapearParaDto(novo);
-
-                // Cria o login para o novo estudante
-                try
-                {
-                    var createLoginDto = new CreateLoginDto
-                    {
-                        ContaId = dto.Id,
-                        Email = dto.Email,
-                        Senha = dto.Senha,
-                        TipoUsuario = TiposUsuario.Estudante
-                    };
-
-                    await _loginService.CriarLoginAsync(createLoginDto);
-                }
-                catch (Exception ex)
-                {
-                    // Log do erro de criação de login, mas não impede a criação do estudante
-                    System.Diagnostics.Debug.WriteLine($"Erro ao criar login para estudante: {ex.Message}");
-                }
-
                 return CreatedAtAction(nameof(BuscarPorId), new { id = criado.Id }, criado);
             }
             catch (Exception ex)
@@ -175,8 +160,17 @@ namespace OpenDoors.Api.Controllers
                 if (existente == null)
                     return NotFound(new { mensagem = "Estudante não encontrado" });
 
+                // Mantém o email do login igual ao do perfil
+                if (!string.IsNullOrWhiteSpace(dto.Email) &&
+                    LoginService.NormalizarEmail(dto.Email) != LoginService.NormalizarEmail(existente.Email))
+                {
+                    if (!await _loginService.SincronizarEmailAsync(id, dto.Email))
+                        return Conflict(new { erro = "Email já cadastrado no sistema" });
+
+                    existente.Email = LoginService.NormalizarEmail(dto.Email);
+                }
+
                 existente.Nome = dto.Nome;
-                existente.Email = dto.Email;
                 existente.Telefone = dto.Telefone;
                 existente.Cpf = dto.Cpf;
                 existente.DataNascimento = dto.DataNascimento;

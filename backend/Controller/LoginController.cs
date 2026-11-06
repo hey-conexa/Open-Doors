@@ -40,5 +40,32 @@ namespace OpenDoors.Api.Controllers
                 return StatusCode(500, new { erro = ex.Message });
             }
         }
+
+        // PUT /api/login/senha
+        [Authorize]
+        [HttpPut("senha")]
+        public async Task<IActionResult> AlterarSenha([FromBody] AlterarSenhaDto dto)
+        {
+            if (!Guid.TryParse(User.FindFirst("conta_id")?.Value, out var contaId))
+                return Unauthorized();
+
+            try
+            {
+                await _loginService.AlterarSenhaAsync(contaId, dto.SenhaAtual, dto.NovaSenha);
+                return NoContent();
+            }
+            catch (MissingRequiredFieldException ex)
+            {
+                return BadRequest(new { erro = ex.Message });
+            }
+            catch (InvalidCredentialsException)
+            {
+                return BadRequest(new { erro = "Senha atual incorreta." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message });
+            }
+        }
     }
 }

@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc.Filters;
 namespace OpenDoors.Api.Middleware
 {
     /// <summary>
-    /// Atributo customizado para validar se o usu·rio autenticado È o propriet·rio do recurso.
-    /// Extrai o parameterName (ex: "estudanteId", "empresaId") da rota e compara com a conta do usu·rio.
+    /// Atributo customizado para validar se o usu√°rio autenticado √© o propriet√°rio do recurso.
+    /// Extrai o parameterName (ex: "estudanteId", "empresaId") da rota e compara com a conta do usu√°rio.
     /// Uso: [AuthorizeOwner("estudanteId")] ou [AuthorizeOwner("empresaId")]
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
@@ -41,13 +41,13 @@ namespace OpenDoors.Api.Middleware
 
             if (!routeData.TryGetValue(_parameterName, out var parameterValue))
             {
-                context.Result = new BadRequestObjectResult(new { erro = $"Par‚metro '{_parameterName}' n„o encontrado na rota" });
+                context.Result = new BadRequestObjectResult(new { erro = $"Par√¢metro '{_parameterName}' n√£o encontrado na rota" });
                 return;
             }
 
             if (!Guid.TryParse(parameterValue?.ToString(), out var resourceId))
             {
-                context.Result = new BadRequestObjectResult(new { erro = $"Par‚metro '{_parameterName}' n„o È um GUID v·lido" });
+                context.Result = new BadRequestObjectResult(new { erro = $"Par√¢metro '{_parameterName}' n√£o √© um GUID v√°lido" });
                 return;
             }
 

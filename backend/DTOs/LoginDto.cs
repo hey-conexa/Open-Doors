@@ -4,6 +4,11 @@ namespace OpenDoors.Api.DTOs
     {
         public string Email { get; set; } = string.Empty;
         public string Senha { get; set; } = string.Empty;
-        public Guid ContaId { get; set; }
+    }
+
+    public class AlterarSenhaDto
+    {
+        public string SenhaAtual { get; set; } = string.Empty;
+        public string NovaSenha { get; set; } = string.Empty;
     }
 }

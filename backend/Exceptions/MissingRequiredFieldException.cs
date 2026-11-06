@@ -1,11 +1,11 @@
 namespace OpenDoors.Api.Exceptions
 {
     /// <summary>
-    /// ExceÁ„o lanÁada quando um campo obrigatÛrio est· ausente ou vazio.
+    /// Exce√ß√£o lan√ßada quando um campo obrigat√≥rio est√° ausente ou vazio.
     /// </summary>
     public class MissingRequiredFieldException : AuthenticationException
     {
         public MissingRequiredFieldException(string fieldName) 
-            : base($"{fieldName} È obrigatÛrio.") { }
+            : base($"{fieldName} √© obrigat√≥rio.") { }
     }
 }

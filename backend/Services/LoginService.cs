@@ -8,11 +8,13 @@ using BCrypt.Net;
 namespace OpenDoors.Api.Services
 {
     /// <summary>
-    /// Servi�o respons�vel pela autentica��o de usu�rios.
+    /// Serviço responsável pela autenticação de usuários.
     /// Busca credenciais no banco de dados e gera tokens JWT.
     /// </summary>
     public class LoginService
     {
+        public const int TamanhoMinimoSenha = 8;
+
         private readonly AppDbContext _dbContext;
         private readonly JwtService _jwtService;
 
@@ -23,33 +25,33 @@ namespace OpenDoors.Api.Services
         }
 
         /// <summary>
-        /// Autentica um usu�rio validando email e senha contra o banco de dados.
+        /// Padroniza o email para comparação e armazenamento (sem espaços e em minúsculas).
         /// </summary>
-        /// <param name="dto">DTO contendo ContaId, Email e Senha</param>
-        /// <returns>DTO com o token JWT gerado</returns>
-        /// <exception cref="MissingRequiredFieldException">Quando campos obrigat�rios est�o ausentes</exception>
-        /// <exception cref="InvalidCredentialsException">Quando email ou senha s�o inv�lidos</exception>
+        public static string NormalizarEmail(string email) => email.Trim().ToLowerInvariant();
+
+        /// <summary>
+        /// Autentica um usuário validando email e senha contra o banco de dados.
+        /// </summary>
+        /// <param name="dto">DTO contendo Email e Senha</param>
+        /// <returns>DTO com o token JWT gerado e os dados da conta</returns>
+        /// <exception cref="MissingRequiredFieldException">Quando campos obrigatórios estão ausentes</exception>
+        /// <exception cref="InvalidCredentialsException">Quando email ou senha são inválidos</exception>
         public async Task<LoginResponseDto> AutenticarAsync(LoginDto dto)
         {
-            // Valida��o de campos obrigat�rios
+            // Validação de campos obrigatórios
             if (string.IsNullOrWhiteSpace(dto.Email))
                 throw new MissingRequiredFieldException("Email");
 
             if (string.IsNullOrWhiteSpace(dto.Senha))
                 throw new MissingRequiredFieldException("Senha");
 
-            if (dto.ContaId == Guid.Empty)
-                throw new MissingRequiredFieldException("ContaId");
+            var email = NormalizarEmail(dto.Email);
 
-            // Busca a conta no banco de dados pela chave prim�ria ContaId
+            // Busca a conta pelo email
             var loginResult = await _dbContext.Logins
-                .FirstOrDefaultAsync(l => l.ContaId == dto.ContaId);
+                .FirstOrDefaultAsync(l => l.Email.ToLower() == email);
 
             if (loginResult == null)
-                throw new InvalidCredentialsException();
-
-            // Compara o email informado com o armazenado
-            if (!loginResult.Email.Equals(dto.Email, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidCredentialsException();
 
             // Verifica a senha utilizando BCrypt
@@ -57,21 +59,38 @@ namespace OpenDoors.Api.Services
                 throw new InvalidCredentialsException();
 
             // Gera o token JWT
-            var token = _jwtService.CriarToken(loginResult);
+            var expiraEm = _jwtService.CalcularExpiracao();
+            var token = _jwtService.CriarToken(loginResult, expiraEm);
 
-            // Retorna o DTO com o token
-            return new LoginResponseDto { Token = token };
+            return new LoginResponseDto
+            {
+                Token = token,
+                ExpiraEm = expiraEm,
+                ContaId = loginResult.ContaId,
+                TipoUsuario = loginResult.TipoUsuario.ToString()
+            };
         }
 
         /// <summary>
-        /// Cria um novo registro de Login no banco de dados.
+        /// Verifica se já existe um login com o email informado.
         /// </summary>
-        /// <param name="dto">DTO contendo informa��es do novo login (ContaId, Email, Senha, TipoUsuario)</param>
-        /// <returns>Objeto Login criado</returns>
-        /// <exception cref="MissingRequiredFieldException">Quando campos obrigat�rios est�o ausentes</exception>
-        public async Task<Login> CriarLoginAsync(CreateLoginDto dto)
+        public Task<bool> EmailJaCadastradoAsync(string email)
         {
-            // Valida��o de campos obrigat�rios
+            var normalizado = NormalizarEmail(email);
+            return _dbContext.Logins.AnyAsync(l => l.Email.ToLower() == normalizado);
+        }
+
+        /// <summary>
+        /// Adiciona um novo registro de Login ao contexto, SEM salvar.
+        /// Quem chama deve executar SaveChangesAsync junto com o cadastro do perfil,
+        /// para que perfil e login sejam gravados na mesma transação.
+        /// </summary>
+        /// <param name="dto">DTO contendo informações do novo login (ContaId, Email, Senha, TipoUsuario)</param>
+        /// <returns>Objeto Login adicionado</returns>
+        /// <exception cref="MissingRequiredFieldException">Quando campos obrigatórios estão ausentes</exception>
+        public Login AdicionarLogin(CreateLoginDto dto)
+        {
+            // Validação de campos obrigatórios
             if (dto.ContaId == Guid.Empty)
                 throw new MissingRequiredFieldException("ContaId");
 
@@ -81,23 +100,57 @@ namespace OpenDoors.Api.Services
             if (string.IsNullOrWhiteSpace(dto.Senha))
                 throw new MissingRequiredFieldException("Senha");
 
-            // Criptografa a senha usando BCrypt
-            var senhaHasheada = BCrypt.Net.BCrypt.HashPassword(dto.Senha);
-
-            // Cria novo registro de Login
             var novoLogin = new Login
             {
                 ContaId = dto.ContaId,
-                Email = dto.Email,
-                Senha = senhaHasheada,
+                Email = NormalizarEmail(dto.Email),
+                Senha = BCrypt.Net.BCrypt.HashPassword(dto.Senha),
                 TipoUsuario = dto.TipoUsuario
             };
 
-            // Insere no banco de dados
-            await _dbContext.Logins.AddAsync(novoLogin);
-            await _dbContext.SaveChangesAsync();
-
+            _dbContext.Logins.Add(novoLogin);
             return novoLogin;
+        }
+
+        /// <summary>
+        /// Atualiza o email do login quando o perfil troca de email, SEM salvar.
+        /// </summary>
+        /// <returns>false se o novo email já pertence a outra conta</returns>
+        public async Task<bool> SincronizarEmailAsync(Guid contaId, string novoEmail)
+        {
+            var normalizado = NormalizarEmail(novoEmail);
+
+            var emUso = await _dbContext.Logins
+                .AnyAsync(l => l.ContaId != contaId && l.Email.ToLower() == normalizado);
+            if (emUso)
+                return false;
+
+            var login = await _dbContext.Logins.FirstOrDefaultAsync(l => l.ContaId == contaId);
+            if (login != null)
+                login.Email = normalizado;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Troca a senha da conta, exigindo a senha atual.
+        /// </summary>
+        /// <exception cref="InvalidCredentialsException">Quando a senha atual não confere</exception>
+        public async Task AlterarSenhaAsync(Guid contaId, string senhaAtual, string novaSenha)
+        {
+            if (string.IsNullOrWhiteSpace(senhaAtual))
+                throw new MissingRequiredFieldException("Senha atual");
+
+            if (string.IsNullOrWhiteSpace(novaSenha) || novaSenha.Length < TamanhoMinimoSenha)
+                throw new MissingRequiredFieldException($"Nova senha com ao menos {TamanhoMinimoSenha} caracteres");
+
+            var login = await _dbContext.Logins.FirstOrDefaultAsync(l => l.ContaId == contaId);
+
+            if (login == null || !BCrypt.Net.BCrypt.Verify(senhaAtual, login.Senha))
+                throw new InvalidCredentialsException();
+
+            login.Senha = BCrypt.Net.BCrypt.HashPassword(novaSenha);
+            await _dbContext.SaveChangesAsync();
         }
     }
 }

@@ -77,12 +77,15 @@ builder.Services.AddSingleton<Supabase.Client>(_ =>
 });
 
 // ============================================
-// AUTENTICAÇÃO JWT (Supabase)
+// AUTENTICAÇÃO JWT (token próprio, gerado pelo JwtService)
 // ============================================
 
-// Busca as chaves públicas do Supabase (ES256) e faz cache em memória
-var jwksUri = $"{supabaseUrl}/auth/v1/.well-known/jwks.json";
-IList<SecurityKey>? cachedJwksKeys = null;
+// Mesma chave usada pelo JwtService para assinar os tokens (HS256)
+var jwtSecret = builder.Configuration["JWT:Secret"];
+if (string.IsNullOrEmpty(jwtSecret) || Encoding.ASCII.GetByteCount(jwtSecret) < 32)
+{
+    throw new Exception("JWT:Secret ausente ou curta demais (mínimo 32 caracteres). Configure em appsettings.Development.json");
+}
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -90,19 +93,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecret)),
+            ValidateIssuer = true,
+            ValidIssuer = OpenDoors.Api.Services.JwtService.Issuer,
+            ValidateAudience = true,
+            ValidAudience = OpenDoors.Api.Services.JwtService.Audience,
             ValidateLifetime = true,
-            IssuerSigningKeyResolver = (_, _, _, _) =>
-            {
-                if (cachedJwksKeys == null)
-                {
-                    using var http = new System.Net.Http.HttpClient();
-                    var jwksJson = http.GetStringAsync(jwksUri).Result;
-                    cachedJwksKeys = new JsonWebKeySet(jwksJson).GetSigningKeys();
-                }
-                return cachedJwksKeys;
-            }
+            ClockSkew = TimeSpan.FromMinutes(1)
         };
     });
 

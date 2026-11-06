@@ -8,23 +8,23 @@ namespace OpenDoors.Api.DTOs
     public class CreateLoginDto
     {
         /// <summary>
-        /// UUID da conta associada (referÍncia ao usu·rio autenticado no Supabase Auth).
+        /// UUID da conta associada (refer√™ncia ao usu√°rio autenticado no Supabase Auth).
         /// </summary>
         public Guid ContaId { get; set; }
 
         /// <summary>
-        /// Email do usu·rio.
+        /// Email do usu√°rio.
         /// </summary>
         public string Email { get; set; } = string.Empty;
 
         /// <summary>
-        /// Senha do usu·rio.
+        /// Senha do usu√°rio.
         /// NOTA: Considere usar hash (BCrypt) antes de salvar no banco de dados.
         /// </summary>
         public string Senha { get; set; } = string.Empty;
 
         /// <summary>
-        /// Tipo de usu·rio: Estudante ou Empresa.
+        /// Tipo de usu√°rio: Estudante ou Empresa.
         /// </summary>
         public TiposUsuario TipoUsuario { get; set; }
     }

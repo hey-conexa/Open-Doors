@@ -8,13 +8,13 @@ namespace OpenDoors.Api.Models
         // ID auto-incremento
         public int Id { get; set; }
 
-        // FK — referência à conta (usuário)
+        // FK â€” referÃªncia Ã  conta (usuÃ¡rio)
         public Guid ContaId { get; set; }
 
-        // Email do usuário
+        // Email do usuÃ¡rio
         public string Email { get; set; } = string.Empty;
 
-        // Senha do usuário
+        // Senha do usuÃ¡rio
         public string Senha { get; set; } = string.Empty;
 
         public TiposUsuario TipoUsuario { get; set; }

@@ -1,7 +1,5 @@
 /* Painel da Empresa — Open Doors */
 
-const API = 'https://monotype-sudoku-arousal.ngrok-free.dev';
-
 const HABILIDADES_OPCOES = [
     'Comunicacao', 'Trabalho em equipe', 'Lideranca', 'Organizacao', 'Resolucao de problemas',
     'Pensamento analitico', 'Criatividade', 'Atendimento ao cliente', 'Negociacao', 'Proatividade',
@@ -16,34 +14,22 @@ const HABILIDADES_OPCOES = [
 let currentSession = null;
 let currentEmpresa = null;
 
-// ─── AUTH FETCH ──────────────────────────────────────────────────────────────
-
-async function authFetch(url, opts = {}) {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    const token = session?.access_token;
-    return fetch(url, {
-        ...opts,
-        headers: {
-            ...(opts.headers || {}),
-            'ngrok-skip-browser-warning': '1',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
-    });
-}
-
 // ─── INIT ────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        const { data: { session: authSession } } = await supabaseClient.auth.getSession();
-        if (!authSession) {
+        // Token próprio do backend (salvo no login)
+        const auth = getAuth();
+        if (!auth || auth.tipoUsuario !== 'Empresa') {
+            clearAuth();
             window.location.href = '../Acesso/AcessoEmpresas.html';
             return;
         }
 
         const raw = localStorage.getItem('od-session');
         const session = raw ? JSON.parse(raw) : null;
-        if (!session || session.type !== 'company') {
+        if (!session || session.type !== 'company' || session.id !== auth.contaId) {
+            clearAuth();
             window.location.href = '../Acesso/AcessoEmpresas.html';
             return;
         }
@@ -842,8 +828,7 @@ function closeProfileDrawer() {
 }
 
 async function doLogout() {
-    try { await supabaseClient.auth.signOut(); } catch (_) {}
-    localStorage.removeItem('od-session');
+    clearAuth();
     window.location.href = '../OpenDoors.html';
 }
 

@@ -6,7 +6,7 @@ using OpenDoors.Api.Models;
 namespace OpenDoors.Api.Middleware
 {
     /// <summary>
-    /// Atributo customizado para validar se o usu·rio autenticado possui um dos tipos de usu·rio permitidos.
+    /// Atributo customizado para validar se o usu√°rio autenticado possui um dos tipos de usu√°rio permitidos.
     /// Uso: [AuthorizeRole(TiposUsuario.Estudante)] ou [AuthorizeRole(TiposUsuario.Estudante, TiposUsuario.Empresa)]
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]

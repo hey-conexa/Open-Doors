@@ -1,21 +1,7 @@
 /* Lógica da Área do Estudante e Teste Vocacional — Escala Likert */
 
-const API = 'https://monotype-sudoku-arousal.ngrok-free.dev'
 let currentSession = null
 let currentStudent = null
-
-async function authFetch(url, options = {}) {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    const token = session?.access_token;
-    return fetch(url, {
-        ...options,
-        headers: {
-            ...options.headers,
-            'ngrok-skip-browser-warning': '1',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
-    });
-}
 
 const HABILIDADES_OPCOES = [
     'Comunicacao', 'Trabalho em equipe', 'Lideranca', 'Organizacao', 'Resolucao de problemas',
@@ -33,9 +19,10 @@ const HABILIDADES_OPCOES = [
 // ==============================================================
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        // Verifica sessão real no Supabase Auth
-        const { data: { session: authSession } } = await supabaseClient.auth.getSession();
-        if (!authSession) {
+        // Token próprio do backend (salvo no login)
+        const auth = getAuth();
+        if (!auth || auth.tipoUsuario !== 'Estudante') {
+            clearAuth();
             window.location.href = '../Acesso/AcessoEstudantes.html';
             return;
         }
@@ -43,7 +30,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const raw     = localStorage.getItem('od-session')
         const session = raw ? JSON.parse(raw) : null
 
-        if (!session || session.type !== 'student') {
+        if (!session || session.type !== 'student' || session.id !== auth.contaId) {
+            clearAuth()
             window.location.href = '../Acesso/AcessoEstudantes.html'
             return
         }
@@ -63,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (session.id) {
             try {
-                const res = await fetch(`${API}/api/testes-vocacionais/estudante/${session.id}`)
+                const res = await authFetch(`${API}/api/testes-vocacionais/estudante/${session.id}`)
                 if (res.ok) {
                     const teste = await res.json()
                     if (teste && teste.analisadoIa) {
@@ -95,10 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 })
 
 async function doLogout() {
-    try {
-        await supabaseClient.auth.signOut();
-        localStorage.removeItem('od-session');
-    } catch (e) {}
+    clearAuth();
     window.location.href = '../OpenDoors.html';
 }
 
@@ -523,6 +508,8 @@ function abrirModalSeguranca() {
         title: 'Seguranca',
         bodyHtml: `
             <div class="me-form-grid">
+                <label for="senhaAtualInput">Senha atual</label>
+                <input id="senhaAtualInput" type="password" placeholder="Sua senha atual">
                 <label for="novaSenhaInput">Nova senha</label>
                 <input id="novaSenhaInput" type="password" placeholder="Minimo 8 caracteres">
                 <label for="confirmaSenhaInput">Confirmar nova senha</label>
@@ -531,14 +518,15 @@ function abrirModalSeguranca() {
         `,
         saveLabel: 'Alterar senha',
         onSave: async () => {
+            const atual = document.getElementById('senhaAtualInput')?.value || '';
             const nova = document.getElementById('novaSenhaInput')?.value || '';
+            if (!atual) throw new Error('Digite a senha atual.');
             const conf = document.getElementById('confirmaSenhaInput')?.value || '';
             if (!nova) throw new Error('Digite a nova senha.');
             if (nova.length < 8) throw new Error('A nova senha precisa ter ao menos 8 caracteres.');
             if (nova !== conf) throw new Error('Confirmacao de senha nao confere.');
 
-            const { error } = await supabaseClient.auth.updateUser({ password: nova });
-            if (error) throw new Error(error.message);
+            await apiAlterarSenha(atual, nova);
         }
     });
 }
