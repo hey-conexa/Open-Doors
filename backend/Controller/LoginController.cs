@@ -12,11 +12,13 @@ namespace OpenDoors.Api.Controllers
     {
         private readonly LoginService _loginService;
         private readonly GoogleAuthService _googleAuth;
+        private readonly ILogger<LoginController> _logger;
 
-        public LoginController(LoginService loginService, GoogleAuthService googleAuth)
+        public LoginController(LoginService loginService, GoogleAuthService googleAuth, ILogger<LoginController> logger)
         {
             _loginService = loginService;
             _googleAuth = googleAuth;
+            _logger = logger;
         }
 
         // GET /api/login/config — dados públicos que o frontend precisa (Client ID do Google)
@@ -78,6 +80,7 @@ namespace OpenDoors.Api.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Falha ao enviar o código de redefinição de senha");
                 return StatusCode(500, new { erro = "Não foi possível enviar o e-mail agora. Tente novamente.", detalhe = ex.Message });
             }
         }

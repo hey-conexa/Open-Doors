@@ -44,12 +44,26 @@ namespace OpenDoors.Api.Services
 
             var porta = int.TryParse(_config["Email:SmtpPort"], out var p) ? p : 587;
 
-            using var smtp = new SmtpClient();
+            using var smtp = new SmtpClient
+            {
+                // Consulta se o certificado do servidor foi revogado (CRL/OCSP). Fica ligada por padrão.
+                // Desligue com "Email:VerificarRevogacao": false só em redes cujo proxy bloqueia essas
+                // consultas; a cadeia, o nome do servidor e a validade do certificado continuam verificados.
+                CheckCertificateRevocation = !bool.TryParse(_config["Email:VerificarRevogacao"], out var verificar) || verificar
+            };
             await smtp.ConnectAsync(_config["Email:SmtpHost"], porta,
                 porta == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls);
 
             if (!string.IsNullOrWhiteSpace(_config["Email:Usuario"]))
-                await smtp.AuthenticateAsync(_config["Email:Usuario"], _config["Email:Senha"]);
+            {
+                var senha = _config["Email:Senha"] ?? string.Empty;
+
+                // Senha de app do Gmail é exibida como "abcd efgh ijkl mnop", mas os espaços não fazem parte dela
+                if (_config["Email:SmtpHost"]!.Contains("gmail.com", StringComparison.OrdinalIgnoreCase))
+                    senha = senha.Replace(" ", string.Empty);
+
+                await smtp.AuthenticateAsync(_config["Email:Usuario"], senha);
+            }
 
             await smtp.SendAsync(mensagem);
             await smtp.DisconnectAsync(true);

@@ -10,9 +10,14 @@ namespace OpenDoors.Api.Services
     public class GoogleAuthService
     {
         private readonly string? _clientId;
+        private readonly ILogger<GoogleAuthService> _logger;
 
-        public GoogleAuthService(IConfiguration config)
+        // Tolera relógio do servidor alguns minutos adiantado/atrasado em relação ao Google
+        private static readonly TimeSpan ToleranciaRelogio = TimeSpan.FromMinutes(5);
+
+        public GoogleAuthService(IConfiguration config, ILogger<GoogleAuthService> logger)
         {
+            _logger = logger;
             var clientId = config["Google:ClientId"];
             _clientId = string.IsNullOrWhiteSpace(clientId) || clientId == "GOOGLE_CLIENT_ID" ? null : clientId;
         }
@@ -37,11 +42,17 @@ namespace OpenDoors.Api.Services
             try
             {
                 payload = await GoogleJsonWebSignature.ValidateAsync(credential,
-                    new GoogleJsonWebSignature.ValidationSettings { Audience = new[] { _clientId } });
+                    new GoogleJsonWebSignature.ValidationSettings
+                    {
+                        Audience = new[] { _clientId },
+                        IssuedAtClockTolerance = ToleranciaRelogio,
+                        ExpirationTimeClockTolerance = ToleranciaRelogio
+                    });
             }
             // Token adulterado ou malformado (ex.: Base64 inválido) também é credencial inválida
             catch (Exception ex) when (ex is InvalidJwtException or FormatException or ArgumentException)
             {
+                _logger.LogWarning("Token do Google recusado: {Motivo}", ex.Message);
                 throw new InvalidCredentialsException("Login com Google inválido ou expirado. Tente novamente.");
             }
 
