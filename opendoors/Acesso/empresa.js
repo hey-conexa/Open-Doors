@@ -1,7 +1,5 @@
 /* Lógica exclusiva da página AcessoEmpresas */
 
-const API = 'https://opendoors-api.onrender.com';
-
 // ──────────────────────────────────────────────
 // TABS
 // ──────────────────────────────────────────────
@@ -19,8 +17,24 @@ function switchTab(tab) {
 }
 
 // ──────────────────────────────────────────────
-// LOGIN
+// LOGIN — /api/login (JWT do backend)
 // ──────────────────────────────────────────────
+
+// Busca o perfil da empresa logada e guarda a sessão local
+async function carregarSessaoEmpresa(contaId) {
+  const res = await authFetch(`${API}/api/empresas/${contaId}`);
+  if (!res.ok) throw new Error('Perfil de empresa não encontrado. Cadastre-se primeiro.');
+  const empresa = await res.json();
+
+  localStorage.setItem('od-session', JSON.stringify({
+    type:  'company',
+    id:    empresa.id,
+    name:  empresa.razaoSocial || empresa.nomeFantasia,
+    email: empresa.email
+  }));
+  return empresa;
+}
+
 async function companyLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pw    = document.getElementById('login-pw').value;
@@ -36,27 +50,25 @@ async function companyLogin() {
   btn.setAttribute('aria-busy', 'true');
 
   try {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pw });
-
-    if (error) {
-      const msg = error.message === 'Invalid login credentials'
-        ? 'E-mail ou senha incorretos.'
-        : error.message;
-      return showError('login-email', msg);
+    let auth;
+    try {
+      auth = await apiLogin(email, pw);
+    } catch (err) {
+      if (err.status) return showError('login-email', err.status === 401 ? 'E-mail ou senha incorretos.' : err.message);
+      throw err;
     }
 
-    const res = await fetch(`${API}/api/empresas/${data.user.id}`, {
-      headers: { 'Authorization': `Bearer ${data.session.access_token}`, 'ngrok-skip-browser-warning': '1' }
-    });
-    if (!res.ok) return showError('login-email', 'Perfil de empresa não encontrado. Cadastre-se primeiro.');
-    const empresa = await res.json();
+    if (auth.tipoUsuario !== 'Empresa') {
+      clearAuth();
+      return showError('login-email', 'Esta conta é de estudante. Use o acesso para estudantes.');
+    }
 
-    localStorage.setItem('od-session', JSON.stringify({
-      type:  'company',
-      id:    empresa.id,
-      name:  empresa.razaoSocial || empresa.nomeFantasia,
-      email: empresa.email
-    }));
+    try {
+      await carregarSessaoEmpresa(auth.contaId);
+    } catch (err) {
+      clearAuth();
+      return showError('login-email', err.message);
+    }
 
     redirectToPanel();
 
@@ -100,60 +112,25 @@ async function companyRegister() {
   if (!phone)   return showError('co-phone',   'Campo obrigatório.');
   if (cep.replace(/\D/g,'').length < 8)
                 return showError('co-cep',     'CEP inválido.');
-  if (!pw)      return showError('co-pw',      'Campo obrigatório.');
-  if (pw.length < 8)   return showError('co-pw',  'Mínimo 8 caracteres.');
-  if (pw !== pwc)      return showError('co-pwc', 'As senhas não coincidem.');
+  if (!googleCredentialCadastro) {
+    if (!pw)      return showError('co-pw',      'Campo obrigatório.');
+    if (pw.length < 8)   return showError('co-pw',  'Mínimo 8 caracteres.');
+    if (pw !== pwc)      return showError('co-pwc', 'As senhas não coincidem.');
+  }
   if (!terms)   return showError('co-terms-wrap', 'Aceite os termos para continuar.');
 
   const btn = document.querySelector('#screen-register .btn-primary');
   if (btn) { btn.disabled = true; btn.textContent = 'Criando conta...'; btn.setAttribute('aria-busy', 'true'); }
 
   try {
-    // 1. Cria usuário no Supabase Auth
-    const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-      email,
-      password: pw,
-      options: { data: { nome: name, tipo: 'empresa' } }
-    });
-
-    if (authError) {
-      // 429 — rate limit
-      if (authError.status === 429 || authError.message?.includes('security purposes')) {
-        return showError('co-email', 'Muitas tentativas. Aguarde alguns segundos e tente novamente.');
-      }
-      const msg = authError.message === 'User already registered'
-        ? 'Este e-mail já possui uma conta. Tente fazer login.'
-        : authError.message;
-      return showError('co-email', msg);
-    }
-
-    // 2. Obter token de acesso — signUp pode retornar session=null se email confirmation estiver ativa
-    let accessToken = authData.session?.access_token;
-
-    if (!accessToken) {
-      // Tenta fazer login imediatamente para obter o token
-      const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password: pw });
-
-      if (signInError || !signInData?.session) {
-        // Email confirmation obrigatório — usuário auth criado mas precisa confirmar email
-        document.getElementById('success-title').textContent = 'Verifique seu e-mail!';
-        document.getElementById('success-msg').textContent =
-          `Enviamos um link de confirmação para ${email}. Confirme e faça login para acessar o painel.`;
-        document.getElementById('success-meta').style.display = 'none';
-        showScreen('screen-success');
-        return;
-      }
-
-      accessToken = signInData.session.access_token;
-    }
-
-    // 3. Cria perfil da empresa no backend
+    // 1. Cria perfil + login da empresa no backend (o Id da conta é gerado pela API)
     const [localidade, uf] = city.includes(' — ') ? city.split(' — ') : [city, ''];
     const payload = {
-      id:               authData.user.id,
       razaoSocial:      name,
       cnpj:             cnpj.replace(/\D/g,''),
       email:            email,
+      // Cadastro pelo Google dispensa senha: o backend valida o token
+      ...(googleCredentialCadastro ? { googleCredential: googleCredentialCadastro } : { senha: pw }),
       telefone:         phone,
       cep:              cep.replace(/\D/g,''),
       cidade:           localidade.trim(),
@@ -166,27 +143,22 @@ async function companyRegister() {
 
     const res = await fetch(`${API}/api/empresas`, {
       method:  'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      },
+      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
       body: JSON.stringify(payload)
     });
 
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
-      await supabaseClient.auth.signOut();
+      if (res.status === 409) return showError('co-email', 'Este e-mail já possui uma conta. Tente fazer login.');
       throw new Error(errBody.erro || `Erro ${res.status} ao salvar perfil da empresa`);
     }
 
-    const criada = await res.json();
-
-    localStorage.setItem('od-session', JSON.stringify({
-      type:  'company',
-      id:    criada.id,
-      name:  criada.razaoSocial || name,
-      email: criada.email
-    }));
+    // 2. Entra com a conta recém-criada para obter o token
+    const auth = googleCredentialCadastro
+      ? (await apiLoginGoogle(googleCredentialCadastro)).auth
+      : await apiLogin(email, pw);
+    googleCredentialCadastro = null;
+    await carregarSessaoEmpresa(auth.contaId);
 
     // Mostra sucesso e redireciona
     document.getElementById('s-company').textContent = name;
@@ -203,6 +175,52 @@ async function companyRegister() {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Criar conta'; btn.removeAttribute('aria-busy'); }
   }
+}
+
+// ──────────────────────────────────────────────
+// LOGIN COM GOOGLE — chamado pelo botão do Google (acesso-shared.js)
+// ──────────────────────────────────────────────
+async function onGoogleCredential(credential) {
+  clearErrors();
+  try {
+    const r = await apiLoginGoogle(credential);
+
+    // Ainda não tem conta: vai para o cadastro com nome e e-mail do Google
+    if (r.precisaCadastro) {
+      switchTab('register');
+      prepararCadastroGoogle(credential, r, {
+        nome: 'co-contact',
+        email: 'co-email',
+        senhaContainers: [document.getElementById('co-pw')?.closest('.field-row')]
+      });
+      return;
+    }
+
+    if (r.auth.tipoUsuario !== 'Empresa') {
+      clearAuth();
+      switchTab('login');
+      return showError('login-email', 'Esta conta é de estudante. Use o acesso para estudantes.');
+    }
+
+    await carregarSessaoEmpresa(r.auth.contaId);
+    redirectToPanel();
+  } catch (err) {
+    clearAuth();
+    switchTab('login');
+    showError('login-email', err.message || 'Não foi possível entrar com o Google.');
+    console.error(err);
+  }
+}
+
+// ──────────────────────────────────────────────
+// REDEFINIÇÃO DE SENHA — a lógica fica em acesso-shared.js
+// ──────────────────────────────────────────────
+function mostrarSucessoRedefinicao() {
+  document.getElementById('success-title').textContent = 'Senha redefinida!';
+  document.getElementById('success-msg').textContent = 'Sua nova senha já está valendo. Entre com ela para continuar.';
+  document.getElementById('success-meta').style.display = 'none';
+  document.getElementById('success-actions-reset').style.display = 'flex';
+  showScreen('screen-success');
 }
 
 // ──────────────────────────────────────────────
@@ -289,11 +307,11 @@ function checkPwStrength(pw, barsId, labelId) {
 }
 
 // Verifica sessão já existente ao carregar
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
+    const auth  = getAuth();
     const local = localStorage.getItem('od-session');
-    if (session && local) {
+    if (auth && local) {
       const s = JSON.parse(local);
       if (s.type === 'company') redirectToPanel();
     }

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Models;
 
 namespace OpenDoors.Api.Controllers
@@ -10,11 +12,11 @@ namespace OpenDoors.Api.Controllers
     [Route("api/candidaturas-historico")]
     public class CandidaturasHistoricoController : ControllerBase
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
-        public CandidaturasHistoricoController(Supabase.Client supabase)
+        public CandidaturasHistoricoController(AppDbContext dbContext)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
         }
 
         // GET /api/candidaturas-historico
@@ -23,8 +25,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase.From<CandidaturaHistorico>().Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                var resultado = await _dbContext.CandidaturasHistorico.ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -40,12 +42,11 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<CandidaturaHistorico>()
+                var resultado = await _dbContext.CandidaturasHistorico
                     .Where(h => h.CandidaturaId == candidaturaId)
-                    .Order(h => h.CriadoEm!, Supabase.Postgrest.Constants.Ordering.Ascending)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .OrderBy(h => h.CriadoEm)
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)

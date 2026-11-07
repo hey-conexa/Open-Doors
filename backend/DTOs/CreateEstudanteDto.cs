@@ -5,9 +5,13 @@ namespace OpenDoors.Api.DTOs
         public Guid Id { get; set; }
         public string Nome { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string Senha { get; set; } = string.Empty;
+
+        // Cadastro pelo Google: ID token do botão "Entrar com o Google" (dispensa a senha)
+        public string? GoogleCredential { get; set; }
         public string? Telefone { get; set; }
         public string? Cpf { get; set; }
-        public DateTime? DataNascimento { get; set; }
+        public DateOnly? DataNascimento { get; set; }
         public string? Cidade { get; set; }
         public string? Estado { get; set; }
         public string? FotoPerfilUrl { get; set; }

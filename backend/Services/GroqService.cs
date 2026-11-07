@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 namespace OpenDoors.Api.Services
 {
     /// <summary>
-    /// Encapsula chamadas à API Groq (LLM Llama 3.3).
+    /// Encapsula chamadas à API Groq (modelo padrão: openai/gpt-oss-120b).
     /// Será migrado para Claude API no período de aperfeiçoamento (24/05 - 03/06).
     /// </summary>
     public class GroqService
@@ -17,6 +17,8 @@ namespace OpenDoors.Api.Services
         public GroqService(IConfiguration config, HttpClient http)
         {
             _http = http;
+            // Modelo configurável em "Groq:Model" (a Groq aposenta modelos de tempos em tempos)
+            _model = string.IsNullOrWhiteSpace(config["Groq:Model"]) ? "openai/gpt-oss-120b" : config["Groq:Model"]!;
             var apiKey = config["Groq:ApiKey"]
                 ?? throw new InvalidOperationException("Groq:ApiKey não configurada no appsettings.Development.json");
             _model = config["Groq:Model"] ?? "openai/gpt-oss-20b";
@@ -44,11 +46,12 @@ namespace OpenDoors.Api.Services
 
             var response = await _http.PostAsync(Endpoint, content);
             var body = await response.Content.ReadAsStringAsync();
+
+            // Inclui a mensagem da Groq no erro (ex.: modelo inexistente, chave inválida, limite de uso)
             if (!response.IsSuccessStatusCode)
-            {
-                throw new InvalidOperationException(
-                    $"Groq recusou o modelo '{_model}' ({(int)response.StatusCode}): {body}");
-            }
+                throw new HttpRequestException(
+                    $"Groq respondeu {(int)response.StatusCode} ({response.StatusCode}) com o modelo '{_model}': {body}",
+                    null, response.StatusCode);
 
             dynamic? parsed = JsonConvert.DeserializeObject(body);
             var texto = (string)(parsed?.choices[0].message.content ?? "");

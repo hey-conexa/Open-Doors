@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Models;
 
 namespace OpenDoors.Api.Services
@@ -12,7 +14,7 @@ namespace OpenDoors.Api.Services
     public class GerarPerguntasMensaisService
     {
         private readonly GroqService _groq;
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
         // Temas rotativos — um por mês, na ordem do ano
         private static readonly string[] TemasPorMes = new[]
@@ -31,10 +33,10 @@ namespace OpenDoors.Api.Services
             "propósito e impacto social do trabalho"         // Dezembro
         };
 
-        public GerarPerguntasMensaisService(GroqService groq, Supabase.Client supabase)
+        public GerarPerguntasMensaisService(GroqService groq, AppDbContext dbContext)
         {
-            _groq     = groq;
-            _supabase = supabase;
+            _groq      = groq;
+            _dbContext = dbContext;
         }
 
         /// <summary>
@@ -53,13 +55,12 @@ namespace OpenDoors.Api.Services
         public async Task<List<PerguntaTeste>> GerarParaMesAsync(string mesReferencia)
         {
             // Verifica se já foram geradas perguntas para este mês
-            var existentes = await _supabase
-                .From<PerguntaTeste>()
+            var existentes = await _dbContext.PerguntasTeste
                 .Where(p => p.MesReferencia == mesReferencia)
-                .Get();
+                .ToListAsync();
 
-            if (existentes.Models.Any())
-                return existentes.Models;
+            if (existentes.Any())
+                return existentes;
 
             // Descobre o tema do mês baseado no número do mês
             var mes   = int.Parse(mesReferencia.Split('-')[1]);
@@ -98,9 +99,9 @@ Requisitos:
                 throw new InvalidOperationException("O Groq não retornou perguntas válidas.");
 
             // Descobre a maior ordem atual para não colidir com as perguntas fixas
-            var todasPerguntas = await _supabase.From<PerguntaTeste>().Get();
-            var maiorOrdem     = todasPerguntas.Models.Any()
-                ? todasPerguntas.Models.Max(p => p.Ordem)
+            var todasPerguntas = await _dbContext.PerguntasTeste.ToListAsync();
+            var maiorOrdem     = todasPerguntas.Any()
+                ? todasPerguntas.Max(p => p.Ordem)
                 : 200;
 
             // Salva cada pergunta no banco
@@ -120,12 +121,11 @@ Requisitos:
                     CriadoEm       = DateTime.UtcNow
                 };
 
-                var resultado = await _supabase.From<PerguntaTeste>().Insert(pergunta);
-                var criada    = resultado.Models.FirstOrDefault();
-                if (criada != null)
-                    salvas.Add(criada);
+                await _dbContext.PerguntasTeste.AddAsync(pergunta);
+                salvas.Add(pergunta);
             }
 
+            await _dbContext.SaveChangesAsync();
             return salvas;
         }
 

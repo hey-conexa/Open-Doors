@@ -9,8 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="acesso.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="supabase-client.js" defer></script>
+  <script src="../api-client.js"></script>
   <script src="acesso-shared.js" defer></script>
   <script src="empresa.js" defer></script>
   <link rel="stylesheet" href="../acessibilidade.css">
@@ -29,7 +28,7 @@
         Voltar
       </a>
       <a href="../OpenDoors.html" class="logo-link" aria-label="Open Doors — início">
-        <img src="../images/open-doors-icon.png" alt="" class="logo-img">
+        <img src="../../images/open-doors-icon.png" alt="" class="logo-img">
       </a>
     </div>
     <div class="navbar-right">
@@ -93,6 +92,11 @@
           <h2 class="screen-title">Acesse sua conta</h2>
           <p class="screen-sub">Entre com o e-mail e senha da sua empresa.</p>
 
+          <div class="social-row social-row--single" data-google-area>
+            <div class="google-slot" style="display:none;"></div>
+          </div>
+          <div class="divider" data-google-area><span>ou entre com e-mail e senha</span></div>
+
           <div class="fields">
             <div class="field">
               <label for="login-email">E-mail corporativo</label>
@@ -110,6 +114,7 @@
               </div>
             </div>
 
+            <div class="forgot"><a onclick="showScreen('screen-forgot')">Esqueci minha senha</a></div>
             <button class="btn-primary mt-sm" onclick="companyLogin()">Entrar</button>
           </div>
         </div>
@@ -118,6 +123,11 @@
         <div class="screen" id="screen-register" role="tabpanel" aria-labelledby="tab-register">
           <h2 class="screen-title">Cadastro de empresa</h2>
           <p class="screen-sub">Crie sua conta para publicar vagas e encontrar talentos.</p>
+
+          <div class="social-row social-row--single" data-google-area>
+            <div class="google-slot" style="display:none;"></div>
+          </div>
+          <div class="divider" data-google-area><span>ou preencha o formulário</span></div>
 
           <div class="fields">
             <p class="section-label">Dados da empresa</p>
@@ -231,6 +241,73 @@
           </div>
         </div>
 
+        <!-- ── ESQUECI MINHA SENHA ── -->
+        <div class="screen" id="screen-forgot">
+          <div class="screen-back">
+            <button class="back-screen-btn" onclick="switchTab('login')">Voltar ao login</button>
+          </div>
+          <h2 class="screen-title">Esqueceu sua senha?</h2>
+          <p class="screen-sub" style="margin-bottom:28px;">
+            Informe o e-mail da empresa e enviaremos um código para você criar uma nova senha.
+          </p>
+          <div class="fields">
+            <div class="field">
+              <label for="forgot-email">E-mail cadastrado</label>
+              <input type="email" id="forgot-email" placeholder="contato@empresa.com" autocomplete="email">
+            </div>
+            <button class="btn-primary mt-sm" onclick="sendResetCode()">Enviar código</button>
+          </div>
+        </div>
+
+        <!-- ── NOVA SENHA ── -->
+        <div class="screen" id="screen-reset">
+          <div class="screen-back">
+            <button class="back-screen-btn" onclick="showScreen('screen-forgot')">Voltar</button>
+          </div>
+          <h2 class="screen-title">Criar nova senha</h2>
+          <p class="screen-sub" style="margin-bottom:28px;">
+            Enviamos um código de 6 dígitos para <strong id="reset-email-target">—</strong>.<br>
+            Insira o código e defina sua nova senha.
+          </p>
+          <div class="fields">
+            <div class="field">
+              <label>Código de verificação</label>
+              <div class="otp-row otp-row--inline">
+                <input type="text" inputmode="numeric" maxlength="6" class="otp-digit reset-digit" aria-label="Dígito 1" oninput="resetOtpNext(this, 0)">
+                <input type="text" inputmode="numeric" maxlength="1" class="otp-digit reset-digit" aria-label="Dígito 2" oninput="resetOtpNext(this, 1)">
+                <input type="text" inputmode="numeric" maxlength="1" class="otp-digit reset-digit" aria-label="Dígito 3" oninput="resetOtpNext(this, 2)">
+                <input type="text" inputmode="numeric" maxlength="1" class="otp-digit reset-digit" aria-label="Dígito 4" oninput="resetOtpNext(this, 3)">
+                <input type="text" inputmode="numeric" maxlength="1" class="otp-digit reset-digit" aria-label="Dígito 5" oninput="resetOtpNext(this, 4)">
+                <input type="text" inputmode="numeric" maxlength="1" class="otp-digit reset-digit" aria-label="Dígito 6" oninput="resetOtpNext(this, 5)">
+              </div>
+              <span id="reset-otp-error"></span>
+              <p class="resend-note" style="margin-top:8px; margin-bottom:0; text-align:left;">
+                Não recebeu? <a onclick="sendResetCode(true)">Reenviar código</a>
+              </p>
+            </div>
+            <div class="field">
+              <label for="reset-pw">Nova senha</label>
+              <div class="pw-wrap">
+                <input type="password" id="reset-pw" placeholder="Mínimo 8 caracteres" oninput="checkResetStrength(this)" autocomplete="new-password">
+                <button type="button" class="pw-toggle" onclick="togglePw('reset-pw', this)" aria-label="Mostrar senha"></button>
+              </div>
+              <div class="pw-meter" id="reset-pw-meter">
+                <div class="pw-bar"></div><div class="pw-bar"></div>
+                <div class="pw-bar"></div><div class="pw-bar"></div>
+              </div>
+              <span class="pw-label" id="reset-pw-label"></span>
+            </div>
+            <div class="field">
+              <label for="reset-pwc">Confirmar nova senha</label>
+              <div class="pw-wrap">
+                <input type="password" id="reset-pwc" placeholder="Repita a nova senha" autocomplete="new-password">
+                <button type="button" class="pw-toggle" onclick="togglePw('reset-pwc', this)" aria-label="Mostrar senha"></button>
+              </div>
+            </div>
+            <button class="btn-primary mt-sm" onclick="confirmReset()">Redefinir senha</button>
+          </div>
+        </div>
+
         <!-- ── SUCESSO ── -->
         <div class="success-screen" id="screen-success">
           <div class="success-icon">
@@ -243,6 +320,9 @@
             <div><strong>Contato</strong> <span id="s-contact">—</span></div>
             <div><strong>E-mail</strong>  <span id="s-email">—</span></div>
             <div><strong>Cidade</strong>  <span id="s-city">—</span></div>
+          </div>
+          <div class="success-actions" id="success-actions-reset" style="display:none;">
+            <button class="btn-primary success-btn" onclick="showScreen('screen-login'); switchTab('login')">Ir para o login</button>
           </div>
         </div>
 

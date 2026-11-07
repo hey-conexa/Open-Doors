@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Models;
 
 namespace OpenDoors.Api.Controllers
@@ -10,11 +13,11 @@ namespace OpenDoors.Api.Controllers
     [Route("api/testes-vocacionais")]
     public class TestesVocacionaisController : ControllerBase
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
-        public TestesVocacionaisController(Supabase.Client supabase)
+        public TestesVocacionaisController(AppDbContext dbContext)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
         }
 
         // GET /api/testes-vocacionais
@@ -23,8 +26,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase.From<TesteVocacional>().Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                var resultado = await _dbContext.TestesVocacionais.ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -40,10 +43,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<TesteVocacional>()
-                    .Where(t => t.EstudanteId == estudanteId)
-                    .Single();
+                var resultado = await _dbContext.TestesVocacionais
+                    .FirstOrDefaultAsync(t => t.EstudanteId == estudanteId);
 
                 if (resultado == null)
                     return NotFound(new { mensagem = "Estudante ainda não fez o teste vocacional" });
@@ -63,11 +64,10 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<TesteVocacional>()
+                var resultado = await _dbContext.TestesVocacionais
                     .Where(t => t.AnalisadoIa == true)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)

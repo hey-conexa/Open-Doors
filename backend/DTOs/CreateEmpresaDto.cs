@@ -2,8 +2,7 @@ namespace OpenDoors.Api.DTOs
 {
     /// <summary>
     /// DTO de entrada para criar uma Empresa.
-    /// IMPORTANTE: o Id é OBRIGATÓRIO e deve ser o UUID gerado
-    /// pelo Supabase Auth no momento do cadastro do usuário.
+    /// O Id da empresa é gerado pelo backend no cadastro; o campo Id enviado é ignorado.
     /// </summary>
     public class CreateEmpresaDto
     {
@@ -12,6 +11,10 @@ namespace OpenDoors.Api.DTOs
         public string? NomeFantasia { get; set; }
         public string Cnpj { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string Senha { get; set; } = string.Empty;
+
+        // Cadastro pelo Google: ID token do botão "Entrar com o Google" (dispensa a senha)
+        public string? GoogleCredential { get; set; }
         public string? Telefone { get; set; }
         public string? Site { get; set; }
         public string? LogoUrl { get; set; }

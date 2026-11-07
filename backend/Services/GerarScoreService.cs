@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Models;
 
 namespace OpenDoors.Api.Services
@@ -10,58 +12,43 @@ namespace OpenDoors.Api.Services
     public class GerarScoreService
     {
         private readonly GroqService _groq;
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
-        public GerarScoreService(GroqService groq, Supabase.Client supabase)
+        public GerarScoreService(GroqService groq, AppDbContext dbContext)
         {
             _groq = groq;
-            _supabase = supabase;
+            _dbContext = dbContext;
         }
 
         public async Task<ScoreCompatibilidadeDto> GerarAsync(Guid estudanteId, int vagaId)
         {
-            // Busca dados no Supabase
-            var estudante = await _supabase
-                .From<Estudante>()
-                .Where(e => e.Id == estudanteId)
-                .Single();
+            // Busca dados no banco
+            var estudante = await _dbContext.Estudantes
+                .FirstOrDefaultAsync(e => e.Id == estudanteId);
 
             if (estudante == null)
                 throw new KeyNotFoundException($"Estudante não encontrado: {estudanteId}");
 
-            var vaga = await _supabase
-                .From<Vaga>()
-                .Where(v => v.Id == vagaId)
-                .Single();
+            var vaga = await _dbContext.Vagas
+                .FirstOrDefaultAsync(v => v.Id == vagaId);
 
             if (vaga == null)
                 throw new KeyNotFoundException($"Vaga não encontrada: {vagaId}");
 
-            var testesResultado = await _supabase
-                .From<TesteVocacional>()
-                .Where(t => t.EstudanteId == estudanteId)
-                .Get();
-            var teste = testesResultado.Models.FirstOrDefault();
+            var teste = await _dbContext.TestesVocacionais
+                .FirstOrDefaultAsync(t => t.EstudanteId == estudanteId);
 
             // Monta contextos
             var habilidades = estudante.HabilidadesExtraidas ?? new List<string>();
             var temCurriculo = estudante.TemCurriculo == true || !string.IsNullOrWhiteSpace(estudante.CurriculoUrl);
 
-            // Se tiver currículo salvo, tenta buscar o texto do PDF para enriquecer a análise
-            var textoCurriculo = "";
-            if (!string.IsNullOrWhiteSpace(estudante.CurriculoUrl))
-            {
-                try
-                {
-                    using var http = new System.Net.Http.HttpClient();
-                    var pdfBytes = await http.GetByteArrayAsync(estudante.CurriculoUrl);
-                    using var pdfStream = new System.IO.MemoryStream(pdfBytes);
-                    textoCurriculo = AnalisarCurriculoService.ExtrairTextoPdf(pdfStream);
-                    if (textoCurriculo.Length > 2000)
-                        textoCurriculo = textoCurriculo.Substring(0, 2000) + "...";
-                }
-                catch { /* se falhar, usa só as habilidades */ }
-            }
+            // Se tiver currículo salvo, usa o texto já extraído do PDF para enriquecer a análise
+            var textoCurriculo = await _dbContext.Curriculos
+                .Where(c => c.EstudanteId == estudanteId)
+                .Select(c => c.Texto)
+                .FirstOrDefaultAsync() ?? "";
+            if (textoCurriculo.Length > 2000)
+                textoCurriculo = textoCurriculo.Substring(0, 2000) + "...";
 
             var contextoEstudante = $"""
                 Estudante:
@@ -146,12 +133,8 @@ namespace OpenDoors.Api.Services
 
             try
             {
-                var matchesExistentes = await _supabase
-                    .From<Match>()
-                    .Where(m => m.EstudanteId == estudanteId && m.VagaId == vagaId)
-                    .Get();
-
-                var matchExistente = matchesExistentes.Models.FirstOrDefault();
+                var matchExistente = await _dbContext.Matches
+                    .FirstOrDefaultAsync(m => m.EstudanteId == estudanteId && m.VagaId == vagaId);
 
                 if (matchExistente != null)
                 {
@@ -162,11 +145,11 @@ namespace OpenDoors.Api.Services
                     matchExistente.PontosFortes = dados.PontosFortes;
                     matchExistente.PontosFracos = dados.PontosFracos;
                     matchExistente.Justificativa = dados.Justificativa;
-                    await matchExistente.Update<Match>();
+                    _dbContext.Matches.Update(matchExistente);
                 }
                 else
                 {
-                    await _supabase.From<Match>().Insert(new Match
+                    await _dbContext.Matches.AddAsync(new Match
                     {
                         EstudanteId = estudanteId,
                         VagaId = vagaId,
@@ -181,11 +164,12 @@ namespace OpenDoors.Api.Services
                     });
                 }
 
+                await _dbContext.SaveChangesAsync();
                 await AtualizarRankingAsync(vagaId);
             }
             catch
             {
-                // Se a persistencia falhar (ex.: RLS), ainda retornamos o score para o frontend.
+                // Se a persistencia falhar, ainda retornamos o score para o frontend.
             }
 
             return dados;
@@ -242,27 +226,27 @@ namespace OpenDoors.Api.Services
 
         private async Task AtualizarRankingAsync(int vagaId)
         {
-            var matches = await _supabase
-                .From<Match>()
+            var matches = await _dbContext.Matches
                 .Where(m => m.VagaId == vagaId)
-                .Order(m => m.ScoreTotal, Supabase.Postgrest.Constants.Ordering.Descending)
-                .Get();
+                .OrderByDescending(m => m.ScoreTotal)
+                .ToListAsync();
 
             int posicao = 1;
-            foreach (var match in matches.Models)
+            foreach (var match in matches)
             {
-                var candidaturas = await _supabase
-                    .From<Candidatura>()
+                var candidaturas = await _dbContext.Candidaturas
                     .Where(c => c.EstudanteId == match.EstudanteId && c.VagaId == vagaId)
-                    .Get();
+                    .ToListAsync();
 
-                foreach (var candidatura in candidaturas.Models)
+                foreach (var candidatura in candidaturas)
                 {
                     candidatura.PosicaoRanking = posicao;
-                    await candidatura.Update<Candidatura>();
+                    _dbContext.Candidaturas.Update(candidatura);
                 }
                 posicao++;
             }
+
+            await _dbContext.SaveChangesAsync();
         }
     }
 }

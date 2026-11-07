@@ -1,7 +1,5 @@
 /* Painel da Empresa — Open Doors */
 
-const API = 'https://opendoors-api.onrender.com';
-
 const HABILIDADES_OPCOES = [
     'Comunicacao', 'Trabalho em equipe', 'Lideranca', 'Organizacao', 'Resolucao de problemas',
     'Pensamento analitico', 'Criatividade', 'Atendimento ao cliente', 'Negociacao', 'Proatividade',
@@ -16,34 +14,22 @@ const HABILIDADES_OPCOES = [
 let currentSession = null;
 let currentEmpresa = null;
 
-// ─── AUTH FETCH ──────────────────────────────────────────────────────────────
-
-async function authFetch(url, opts = {}) {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    const token = session?.access_token;
-    return fetch(url, {
-        ...opts,
-        headers: {
-            ...(opts.headers || {}),
-            'ngrok-skip-browser-warning': '1',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
-    });
-}
-
 // ─── INIT ────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        const { data: { session: authSession } } = await supabaseClient.auth.getSession();
-        if (!authSession) {
+        // Token próprio do backend (salvo no login)
+        const auth = getAuth();
+        if (!auth || auth.tipoUsuario !== 'Empresa') {
+            clearAuth();
             window.location.href = '../Acesso/AcessoEmpresas.html';
             return;
         }
 
         const raw = localStorage.getItem('od-session');
         const session = raw ? JSON.parse(raw) : null;
-        if (!session || session.type !== 'company') {
+        if (!session || session.type !== 'company' || session.id !== auth.contaId) {
+            clearAuth();
             window.location.href = '../Acesso/AcessoEmpresas.html';
             return;
         }
@@ -616,18 +602,47 @@ async function verPerfilCandidato(estudanteId) {
 
             <div>
                 <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-400);margin-bottom:8px">Currículo</div>
-                ${est.curriculoUrl
-                    ? `<a href="${escHtml(est.curriculoUrl)}" target="_blank" rel="noopener"
+                ${est.curriculoUrl || est.temCurriculo
+                    ? `<button type="button" onclick="abrirCurriculo('${escHtml(est.id)}', this)"
                             class="em-btn em-btn--ghost em-btn--sm">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                             Abrir currículo (PDF)
-                        </a>`
+                        </button>`
                     : '<span style="color:var(--gray-400);font-size:0.82rem">Currículo não enviado ainda</span>'
                 }
             </div>`;
 
     } catch (e) {
         body.innerHTML = `<p style="color:var(--error)">Não foi possível carregar o perfil.</p>`;
+    }
+}
+
+// Baixa o PDF do currículo pela API (precisa do token) e abre em outra aba
+async function abrirCurriculo(estudanteId, btn) {
+    // Abre a aba já no clique: navegadores bloqueiam abas abertas depois de um await
+    const aba = window.open('', '_blank');
+    if (btn) btn.disabled = true;
+    try {
+        const res = await authFetch(`${API}/api/estudantes/${estudanteId}/curriculo`);
+        if (!res.ok) throw new Error(res.status === 404 ? 'Este estudante ainda não enviou currículo.' : `Erro ${res.status}`);
+        const url = URL.createObjectURL(await res.blob());
+        if (aba) {
+            aba.location.href = url;
+        } else {
+            // Abas bloqueadas pelo navegador: baixa o arquivo em vez de sair do painel
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'curriculo.pdf';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (e) {
+        if (aba) aba.close();
+        alert(e.message || 'Não foi possível abrir o currículo.');
+    } finally {
+        if (btn) btn.disabled = false;
     }
 }
 
@@ -842,8 +857,7 @@ function closeProfileDrawer() {
 }
 
 async function doLogout() {
-    try { await supabaseClient.auth.signOut(); } catch (_) {}
-    localStorage.removeItem('od-session');
+    clearAuth();
     window.location.href = '../OpenDoors.html';
 }
 

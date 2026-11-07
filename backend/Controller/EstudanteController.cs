@@ -1,7 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Exceptions;
+using OpenDoors.Api.Infrastructure.Database;
+using OpenDoors.Api.Middleware;
 using OpenDoors.Api.Models;
+using OpenDoors.Api.Services;
 
 namespace OpenDoors.Api.Controllers
 {
@@ -10,21 +15,26 @@ namespace OpenDoors.Api.Controllers
     [Route("api/[controller]")]
     public class EstudantesController : ControllerBase
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
+        private readonly LoginService _loginService;
+        private readonly GoogleAuthService _googleAuth;
 
-        public EstudantesController(Supabase.Client supabase)
+        public EstudantesController(AppDbContext dbContext, LoginService loginService, GoogleAuthService googleAuth)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
+            _loginService = loginService;
+            _googleAuth = googleAuth;
         }
 
         // GET /api/estudantes
+        [AuthorizeRole(TiposUsuario.Estudante, TiposUsuario.Empresa)]
         [HttpGet]
         public async Task<IActionResult> ListarTodos()
         {
             try
             {
-                var resultado = await _supabase.From<Estudante>().Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                var resultado = await _dbContext.Estudantes.ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -34,16 +44,16 @@ namespace OpenDoors.Api.Controllers
         }
 
         // GET /api/estudantes/ativos
+        [AuthorizeRole(TiposUsuario.Estudante, TiposUsuario.Empresa)]
         [HttpGet("ativos")]
         public async Task<IActionResult> ListarAtivos()
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Estudante>()
+                var resultado = await _dbContext.Estudantes
                     .Where(e => e.Status == "ativo")
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -59,10 +69,8 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Estudante>()
-                    .Where(e => e.Id == id)
-                    .Single();
+                var resultado = await _dbContext.Estudantes
+                    .FirstOrDefaultAsync(e => e.Id == id);
 
                 if (resultado == null)
                     return NotFound(new { mensagem = "Estudante não encontrado" });
@@ -75,26 +83,61 @@ namespace OpenDoors.Api.Controllers
             }
         }
 
+        // GET /api/estudantes/{id}/curriculo — baixa o PDF guardado no banco
+        // Pode baixar: o próprio estudante ou qualquer empresa (para avaliar candidatos)
+        [AuthorizeRole(TiposUsuario.Estudante, TiposUsuario.Empresa)]
+        [HttpGet("{id}/curriculo")]
+        public async Task<IActionResult> BaixarCurriculo(Guid id)
+        {
+            var ehEmpresa = User.FindFirst("tipo_usuario")?.Value == nameof(TiposUsuario.Empresa);
+            var ehDono = Guid.TryParse(User.FindFirst("conta_id")?.Value, out var contaId) && contaId == id;
+            if (!ehEmpresa && !ehDono)
+                return Forbid();
+
+            var arquivo = await _dbContext.Curriculos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.EstudanteId == id);
+
+            if (arquivo == null)
+                return NotFound(new { mensagem = "Este estudante ainda não enviou currículo" });
+
+            return File(arquivo.Conteudo, arquivo.ContentType, arquivo.NomeArquivo);
+        }
+
         // POST /api/estudantes
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Criar([FromBody] CreateEstudanteDto dto)
         {
             try
             {
-                if (dto.Id == Guid.Empty)
-                    return BadRequest(new { erro = "O Id (UUID do Supabase Auth) é obrigatório" });
-
                 if (string.IsNullOrWhiteSpace(dto.Nome))
                     return BadRequest(new { erro = "Nome é obrigatório" });
 
                 if (string.IsNullOrWhiteSpace(dto.Email))
                     return BadRequest(new { erro = "Email é obrigatório" });
 
+                // Cadastro pelo Google: o e-mail vem do token verificado e a senha não é necessária
+                if (!string.IsNullOrWhiteSpace(dto.GoogleCredential))
+                {
+                    var google = await _googleAuth.ValidarAsync(dto.GoogleCredential);
+                    dto.Email = google.Email;
+                    dto.Senha = LoginService.SenhaAleatoria();
+                }
+
+                if (string.IsNullOrWhiteSpace(dto.Senha) || dto.Senha.Length < LoginService.TamanhoMinimoSenha)
+                    return BadRequest(new { erro = $"Senha é obrigatória (mínimo {LoginService.TamanhoMinimoSenha} caracteres)" });
+
+                // Verifica se o email já está cadastrado
+                if (await _loginService.EmailJaCadastradoAsync(dto.Email))
+                    return Conflict(new { erro = "Email já cadastrado no sistema" });
+
                 var novo = new Estudante
                 {
-                    Id = dto.Id,
+                    // O Id da conta é gerado pelo backend e vira o conta_id do login/token
+                    Id = Guid.NewGuid(),
                     Nome = dto.Nome,
-                    Email = dto.Email,
+                    Email = LoginService.NormalizarEmail(dto.Email),
                     Telefone = dto.Telefone,
                     Cpf = dto.Cpf,
                     DataNascimento = dto.DataNascimento,
@@ -113,13 +156,29 @@ namespace OpenDoors.Api.Controllers
                     Status = dto.Status ?? "ativo"
                 };
 
-                var resultado = await _supabase.From<Estudante>().Insert(novo);
+                await _dbContext.Estudantes.AddAsync(novo);
 
-                if (resultado.Models == null || resultado.Models.Count == 0)
-                    return StatusCode(500, new { erro = "Falha ao criar estudante" });
+                // Perfil e login são gravados juntos: se um falhar, nenhum é salvo
+                _loginService.AdicionarLogin(new CreateLoginDto
+                {
+                    ContaId = novo.Id,
+                    Email = dto.Email,
+                    Senha = dto.Senha,
+                    TipoUsuario = TiposUsuario.Estudante
+                });
 
-                var criado = MapearParaDto(resultado.Models[0]);
+                await _dbContext.SaveChangesAsync();
+
+                var criado = MapearParaDto(novo);
                 return CreatedAtAction(nameof(BuscarPorId), new { id = criado.Id }, criado);
+            }
+            catch (AuthenticationException ex)
+            {
+                return BadRequest(new { erro = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(503, new { erro = ex.Message });
             }
             catch (Exception ex)
             {
@@ -128,21 +187,30 @@ namespace OpenDoors.Api.Controllers
         }
 
         // PUT /api/estudantes/{id}
+        [AuthorizeRole(TiposUsuario.Estudante)]
+        [AuthorizeOwner("id")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Atualizar(Guid id, [FromBody] CreateEstudanteDto dto)
         {
             try
             {
-                var existente = await _supabase
-                    .From<Estudante>()
-                    .Where(e => e.Id == id)
-                    .Single();
+                var existente = await _dbContext.Estudantes
+                    .FirstOrDefaultAsync(e => e.Id == id);
 
                 if (existente == null)
                     return NotFound(new { mensagem = "Estudante não encontrado" });
 
+                // Mantém o email do login igual ao do perfil
+                if (!string.IsNullOrWhiteSpace(dto.Email) &&
+                    LoginService.NormalizarEmail(dto.Email) != LoginService.NormalizarEmail(existente.Email))
+                {
+                    if (!await _loginService.SincronizarEmailAsync(id, dto.Email))
+                        return Conflict(new { erro = "Email já cadastrado no sistema" });
+
+                    existente.Email = LoginService.NormalizarEmail(dto.Email);
+                }
+
                 existente.Nome = dto.Nome;
-                existente.Email = dto.Email;
                 existente.Telefone = dto.Telefone;
                 existente.Cpf = dto.Cpf;
                 existente.DataNascimento = dto.DataNascimento;
@@ -160,8 +228,9 @@ namespace OpenDoors.Api.Controllers
                 existente.TemTesteVocacional = dto.TemTesteVocacional;
                 existente.Status = dto.Status;
 
-                var resultado = await existente.Update<Estudante>();
-                return Ok(MapearParaDto(resultado.Models[0]));
+                _dbContext.Estudantes.Update(existente);
+                await _dbContext.SaveChangesAsync();
+                return Ok(MapearParaDto(existente));
             }
             catch (Exception ex)
             {
@@ -170,23 +239,21 @@ namespace OpenDoors.Api.Controllers
         }
 
         // DELETE /api/estudantes/{id}
+        [AuthorizeRole(TiposUsuario.Estudante)]
+        [AuthorizeOwner("id")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Deletar(Guid id)
         {
             try
             {
-                var existente = await _supabase
-                    .From<Estudante>()
-                    .Where(e => e.Id == id)
-                    .Single();
+                var existente = await _dbContext.Estudantes
+                    .FirstOrDefaultAsync(e => e.Id == id);
 
                 if (existente == null)
                     return NotFound(new { mensagem = "Estudante não encontrado" });
 
-                await _supabase
-                    .From<Estudante>()
-                    .Where(e => e.Id == id)
-                    .Delete();
+                _dbContext.Estudantes.Remove(existente);
+                await _dbContext.SaveChangesAsync();
 
                 return NoContent();
             }

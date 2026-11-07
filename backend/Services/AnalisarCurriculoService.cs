@@ -1,26 +1,34 @@
 using System.Text;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Models;
 using UglyToad.PdfPig;
 
 namespace OpenDoors.Api.Services
 {
     /// <summary>
-    /// Analisa currículo (PDF) usando IA, extrai habilidades e salva no Supabase.
+    /// Analisa currículo (PDF) usando IA, extrai habilidades e salva no banco.
+    /// O PDF fica guardado no PostgreSQL (tabela "curriculos") e é servido por
+    /// GET /api/estudantes/{id}/curriculo.
     /// </summary>
     public class AnalisarCurriculoService
     {
-        private readonly GroqService _groq;
-        private readonly Supabase.Client _supabase;
-        private readonly string _supabaseUrl;
+        public const long TamanhoMaximoBytes = 5 * 1024 * 1024; // 5 MB
 
-        public AnalisarCurriculoService(GroqService groq, Supabase.Client supabase, IConfiguration config)
+        private readonly GroqService _groq;
+        private readonly AppDbContext _dbContext;
+
+        public AnalisarCurriculoService(GroqService groq, AppDbContext dbContext)
         {
             _groq = groq;
-            _supabase = supabase;
-            _supabaseUrl = config["Supabase:Url"]?.TrimEnd('/') ?? "";
+            _dbContext = dbContext;
         }
+
+        /// <summary>
+        /// Endereço (relativo à API) para baixar o currículo do estudante.
+        /// </summary>
+        public static string UrlCurriculo(Guid estudanteId) => $"/api/estudantes/{estudanteId}/curriculo";
 
         /// <summary>
         /// Extrai texto de todas as páginas do PDF.
@@ -55,31 +63,34 @@ namespace OpenDoors.Api.Services
 
         public async Task<CurriculoAnalisadoDto> AnalisarAsync(Guid estudanteId, Stream pdfStream, string fileName = "curriculo.pdf")
         {
-            // Lê o stream completo em memória (precisamos usar duas vezes: upload + extração)
+            var estudante = await _dbContext.Estudantes
+                .FirstOrDefaultAsync(e => e.Id == estudanteId);
+
+            if (estudante == null)
+                throw new KeyNotFoundException($"Estudante não encontrado: {estudanteId}");
+
+            // Lê o arquivo em memória (usado duas vezes: extração do texto + gravação no banco)
             using var ms = new MemoryStream();
             await pdfStream.CopyToAsync(ms);
-            ms.Position = 0;
 
-            // 1. Faz upload para o Supabase Storage (bucket "curriculos")
-            string? curriculoUrl = null;
+            if (ms.Length > TamanhoMaximoBytes)
+                throw new InvalidOperationException("O currículo deve ter no máximo 5 MB.");
+
+            var bytes = ms.ToArray();
+            if (bytes.Length < 5 || Encoding.ASCII.GetString(bytes, 0, 5) != "%PDF-")
+                throw new InvalidOperationException("O arquivo enviado não é um PDF válido.");
+
+            // 1. Extrai texto e analisa com IA
+            string textoCurriculo;
             try
             {
-                var storagePath = $"{estudanteId}/{DateTime.UtcNow:yyyyMMddHHmmss}_{fileName}";
-                var bytes = ms.ToArray();
-                await _supabase.Storage
-                    .From("curriculos")
-                    .Upload(bytes, storagePath, new Supabase.Storage.FileOptions { ContentType = "application/pdf", Upsert = true });
-
-                curriculoUrl = $"{_supabaseUrl}/storage/v1/object/public/curriculos/{storagePath}";
+                ms.Position = 0;
+                textoCurriculo = ExtrairTextoPdf(ms);
             }
-            catch
+            catch (Exception ex) when (ex is not OutOfMemoryException)
             {
-                // Upload falhou — continua sem URL (não bloqueia a análise)
+                throw new InvalidOperationException("Não foi possível ler o PDF enviado.");
             }
-
-            // 2. Extrai texto e analisa com IA
-            ms.Position = 0;
-            var textoCurriculo = ExtrairTextoPdf(ms);
 
             if (string.IsNullOrWhiteSpace(textoCurriculo))
                 throw new InvalidOperationException("O PDF enviado não contém texto legível.");
@@ -122,26 +133,32 @@ namespace OpenDoors.Api.Services
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            // 3. Atualiza o estudante no banco com habilidades + URL do currículo
-            var estudante = await _supabase
-                .From<Estudante>()
-                .Where(e => e.Id == estudanteId)
-                .Single();
+            // 2. Guarda (ou substitui) o PDF no PostgreSQL
+            var arquivo = await _dbContext.Curriculos.FirstOrDefaultAsync(c => c.EstudanteId == estudanteId);
+            if (arquivo == null)
+            {
+                arquivo = new CurriculoArquivo { EstudanteId = estudanteId };
+                _dbContext.Curriculos.Add(arquivo);
+            }
 
-            if (estudante == null)
-                throw new KeyNotFoundException($"Estudante não encontrado: {estudanteId}");
+            arquivo.NomeArquivo = string.IsNullOrWhiteSpace(fileName) ? "curriculo.pdf" : Path.GetFileName(fileName);
+            arquivo.ContentType = "application/pdf";
+            arquivo.Conteudo = bytes;
+            arquivo.Texto = textoCurriculo;
+            arquivo.EnviadoEm = DateTime.UtcNow;
 
+            // 3. Atualiza o estudante com habilidades + endereço do currículo
             estudante.HabilidadesExtraidas = dados.Habilidades;
             estudante.TemCurriculo = true;
-            if (curriculoUrl != null)
-                estudante.CurriculoUrl = curriculoUrl;
+            estudante.CurriculoUrl = UrlCurriculo(estudanteId);
 
-            await estudante.Update<Estudante>();
+            await _dbContext.SaveChangesAsync();
 
-            // Devolve a URL para o frontend também
-            dados.CurriculoUrl = curriculoUrl;
+            // Devolve o endereço para o frontend também
+            dados.CurriculoUrl = estudante.CurriculoUrl;
 
             return dados;
         }
     }
+
 }

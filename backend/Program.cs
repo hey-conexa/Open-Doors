@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OpenDoors.Api.Infrastructure.Database;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,39 +41,32 @@ builder.Services.AddCors(options =>
 });
 
 // ============================================
-// CONFIGURAÇÃO DO SUPABASE
+// CONFIGURAÇÃO DO ENTITY FRAMEWORK CORE (PostgreSQL)
 // ============================================
 
-// Lê as configurações do appsettings.json + appsettings.Development.json
-var supabaseUrl = builder.Configuration["Supabase:Url"];
-var supabaseKey = builder.Configuration["Supabase:Key"];
+// Registra o AppDbContext com PostgreSQL
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Valida se as configurações foram carregadas
-if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseKey))
+if (string.IsNullOrEmpty(connectionString))
 {
-    throw new Exception("Configurações do Supabase não foram encontradas! Verifique appsettings.json e appsettings.Development.json");
+    throw new Exception("Connection string 'DefaultConnection' não foi encontrada! Verifique appsettings.json e appsettings.Development.json");
 }
 
-// Cria a instância do cliente Supabase e registra como Singleton
-// (Singleton = uma única instância compartilhada na aplicação inteira, padrão de injeção de dependência)
-builder.Services.AddSingleton<Supabase.Client>(_ =>
+builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    var options = new Supabase.SupabaseOptions
-    {
-        AutoConnectRealtime = true
-    };
-    var client = new Supabase.Client(supabaseUrl, supabaseKey, options);
-    client.InitializeAsync().Wait();
-    return client;
+    options.UseNpgsql(connectionString);
 });
 
 // ============================================
-// AUTENTICAÇÃO JWT (Supabase)
+// AUTENTICAÇÃO JWT (token próprio, gerado pelo JwtService)
 // ============================================
 
-// Busca as chaves públicas do Supabase (ES256) e faz cache em memória
-var jwksUri = $"{supabaseUrl}/auth/v1/.well-known/jwks.json";
-IList<SecurityKey>? cachedJwksKeys = null;
+// Mesma chave usada pelo JwtService para assinar os tokens (HS256)
+var jwtSecret = builder.Configuration["JWT:Secret"];
+if (string.IsNullOrEmpty(jwtSecret) || Encoding.ASCII.GetByteCount(jwtSecret) < 32)
+{
+    throw new Exception("JWT:Secret ausente ou curta demais (mínimo 32 caracteres). Configure em appsettings.Development.json");
+}
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -79,19 +74,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecret)),
+            ValidateIssuer = true,
+            ValidIssuer = OpenDoors.Api.Services.JwtService.Issuer,
+            ValidateAudience = true,
+            ValidAudience = OpenDoors.Api.Services.JwtService.Audience,
             ValidateLifetime = true,
-            IssuerSigningKeyResolver = (_, _, _, _) =>
-            {
-                if (cachedJwksKeys == null)
-                {
-                    using var http = new System.Net.Http.HttpClient();
-                    var jwksJson = http.GetStringAsync(jwksUri).Result;
-                    cachedJwksKeys = new JsonWebKeySet(jwksJson).GetSigningKeys();
-                }
-                return cachedJwksKeys;
-            }
+            ClockSkew = TimeSpan.FromMinutes(1)
         };
     });
 
@@ -110,6 +99,11 @@ builder.Services.AddScoped<OpenDoors.Api.Services.GerarPerguntasMensaisService>(
 
 builder.Services.AddHttpClient<OpenDoors.Api.Services.JoobleService>();
 builder.Services.AddScoped<OpenDoors.Api.Services.JoobleService>();
+
+builder.Services.AddScoped<OpenDoors.Api.Services.JwtService>();
+builder.Services.AddScoped<OpenDoors.Api.Services.LoginService>();
+builder.Services.AddSingleton<OpenDoors.Api.Services.GoogleAuthService>();
+builder.Services.AddScoped<OpenDoors.Api.Services.EmailService>();
 
 // ============================================
 // CONSTRUÇÃO E EXECUÇÃO DO APP

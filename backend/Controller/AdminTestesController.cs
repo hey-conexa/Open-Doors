@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Models;
 using OpenDoors.Api.Services;
 
@@ -11,12 +13,12 @@ namespace OpenDoors.Api.Controllers
     public class AdminTestesController : ControllerBase
     {
         private readonly GerarPerguntasMensaisService _gerador;
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
-        public AdminTestesController(GerarPerguntasMensaisService gerador, Supabase.Client supabase)
+        public AdminTestesController(GerarPerguntasMensaisService gerador, AppDbContext dbContext)
         {
-            _gerador  = gerador;
-            _supabase = supabase;
+            _gerador   = gerador;
+            _dbContext = dbContext;
         }
 
         // POST /api/admin/testes/gerar-mes
@@ -74,9 +76,9 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var todas = await _supabase.From<PerguntaTeste>().Get();
+                var todas = await _dbContext.PerguntasTeste.ToListAsync();
 
-                var agrupado = todas.Models
+                var agrupado = todas
                     .GroupBy(p => p.MesReferencia ?? "fixa")
                     .Select(g => new
                     {

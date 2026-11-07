@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
+using OpenDoors.Api.Middleware;
 using OpenDoors.Api.Models;
 
 namespace OpenDoors.Api.Controllers
@@ -10,21 +13,22 @@ namespace OpenDoors.Api.Controllers
     [Route("api/[controller]")]
     public class NotificacoesController : ControllerBase
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
-        public NotificacoesController(Supabase.Client supabase)
+        public NotificacoesController(AppDbContext dbContext)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
         }
 
         // GET /api/notificacoes
+        // Ambos os tipos podem acessar
         [HttpGet]
         public async Task<IActionResult> ListarTodas()
         {
             try
             {
-                var resultado = await _supabase.From<Notificacao>().Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                var resultado = await _dbContext.Notificacoes.ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -34,17 +38,18 @@ namespace OpenDoors.Api.Controllers
         }
 
         // GET /api/notificacoes/estudante/{id}
+        // Apenas estudantes podem acessar
+        [AuthorizeRole(TiposUsuario.Estudante)]
         [HttpGet("estudante/{estudanteId}")]
         public async Task<IActionResult> ListarPorEstudante(Guid estudanteId)
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Notificacao>()
+                var resultado = await _dbContext.Notificacoes
                     .Where(n => n.EstudanteId == estudanteId)
-                    .Order(n => n.CriadoEm!, Supabase.Postgrest.Constants.Ordering.Descending)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .OrderByDescending(n => n.CriadoEm)
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -54,17 +59,18 @@ namespace OpenDoors.Api.Controllers
         }
 
         // GET /api/notificacoes/empresa/{id}
+        // Apenas empresas podem acessar
+        [AuthorizeRole(TiposUsuario.Empresa)]
         [HttpGet("empresa/{empresaId}")]
         public async Task<IActionResult> ListarPorEmpresa(Guid empresaId)
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Notificacao>()
+                var resultado = await _dbContext.Notificacoes
                     .Where(n => n.EmpresaId == empresaId)
-                    .Order(n => n.CriadoEm!, Supabase.Postgrest.Constants.Ordering.Descending)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .OrderByDescending(n => n.CriadoEm)
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -75,16 +81,17 @@ namespace OpenDoors.Api.Controllers
 
         // GET /api/notificacoes/nao-lidas/estudante/{id}
         // Útil pro badge "você tem X notificações novas"
+        // Apenas estudantes podem acessar
+        [AuthorizeRole(TiposUsuario.Estudante)]
         [HttpGet("nao-lidas/estudante/{estudanteId}")]
         public async Task<IActionResult> NaoLidasEstudante(Guid estudanteId)
         {
             try
             {
-                var resultado = await _supabase
-                    .From<Notificacao>()
+                var resultado = await _dbContext.Notificacoes
                     .Where(n => n.EstudanteId == estudanteId && n.Lida == false)
-                    .Get();
-                var dto = resultado.Models.Select(MapearParaDto).ToList();
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)

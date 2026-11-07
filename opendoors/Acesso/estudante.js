@@ -1,10 +1,42 @@
 /* Lógica exclusiva da página AcessoEstudantes */
 
-const API = 'https://opendoors-api.onrender.com';
-
 // LOGIN SOCIAL
-function socialLogin(provider) {
-  alert(`Redirecionando para autenticação via ${provider}.\n(Integração real requer o SDK do provedor.)`);
+// Botão reserva do Google: só aparece quando o Google não está configurado no backend
+function socialLogin() {
+  alert('O login com Google ainda não está configurado neste servidor.');
+}
+
+// LOGIN COM GOOGLE — chamado pelo botão do Google (acesso-shared.js)
+async function onGoogleCredential(credential) {
+  clearErrors();
+  try {
+    const r = await apiLoginGoogle(credential);
+
+    // Ainda não tem conta: vai para o cadastro com nome e e-mail do Google
+    if (r.precisaCadastro) {
+      showScreen('screen-register');
+      prepararCadastroGoogle(credential, r, {
+        nome: 'reg-name',
+        email: 'reg-email',
+        senhaContainers: ['reg-pw', 'reg-pwc'].map(id => document.getElementById(id)?.closest('.field'))
+      });
+      return;
+    }
+
+    if (r.auth.tipoUsuario !== 'Estudante') {
+      clearAuth();
+      showScreen('screen-login');
+      return showError('login-email', 'Esta conta é de empresa. Use o acesso para empresas.');
+    }
+
+    await carregarSessaoEstudante(r.auth.contaId);
+    showSuccess('Login realizado!', 'Identidade verificada com sucesso. Bem-vindo(a) de volta ao Open Doors!', 'login');
+  } catch (err) {
+    clearAuth();
+    showScreen('screen-login');
+    showError('login-email', err.message || 'Não foi possível entrar com o Google.');
+    console.error(err);
+  }
 }
 
 // MOSTRAR / OCULTAR SENHA
@@ -44,8 +76,27 @@ function checkStrength(input, barsSelector, labelId) {
 }
 
 // ==============================================================
-// LOGIN — Supabase Auth
+// LOGIN — /api/login (JWT do backend)
 // ==============================================================
+
+// Busca o perfil do estudante logado e guarda a sessão local
+async function carregarSessaoEstudante(contaId) {
+  const res = await authFetch(`${API}/api/estudantes/${contaId}`);
+  if (!res.ok) throw new Error('Perfil de estudante não encontrado.');
+  const estudante = await res.json();
+
+  localStorage.setItem('od-session', JSON.stringify({
+    type:               'student',
+    id:                 estudante.id,
+    name:               estudante.nome,
+    email:              estudante.email,
+    curso:              estudante.curso,
+    instituicao:        estudante.instituicao,
+    temTesteVocacional: estudante.temTesteVocacional
+  }));
+  return estudante;
+}
+
 async function studentLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pw    = document.getElementById('login-pw').value;
@@ -62,43 +113,25 @@ async function studentLogin() {
   btn.setAttribute('aria-busy', 'true');
 
   try {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pw });
-
-    if (error) {
-      const msg = error.message === 'Invalid login credentials'
-        ? 'E-mail ou senha incorretos.'
-        : error.message;
-      return showError('login-email', msg);
+    let auth;
+    try {
+      auth = await apiLogin(email, pw);
+    } catch (err) {
+      if (err.status) return showError('login-email', err.status === 401 ? 'E-mail ou senha incorretos.' : err.message);
+      throw err;
     }
 
-    let res = await fetch(`${API}/api/estudantes/${data.user.id}`, {
-      headers: { 'Authorization': `Bearer ${data.session.access_token}`, 'ngrok-skip-browser-warning': '1' }
-    });
-
-    if (!res.ok && data.user.email) {
-      res = await fetch(`${API}/api/estudantes/por-email?email=${encodeURIComponent(data.user.email)}`, {
-        headers: { 'Authorization': `Bearer ${data.session.access_token}`, 'ngrok-skip-browser-warning': '1' }
-      });
+    if (auth.tipoUsuario !== 'Estudante') {
+      clearAuth();
+      return showError('login-email', 'Esta conta é de empresa. Use o acesso para empresas.');
     }
 
-    if (!res.ok) return showError('login-email', 'Perfil de estudante não encontrado.');
-
-    const payload = await res.json();
-    const estudante = Array.isArray(payload) ? payload[0] : payload;
-
-    if (!estudante?.id) {
-      return showError('login-email', 'Perfil de estudante encontrado, mas sem identificador válido.');
+    try {
+      await carregarSessaoEstudante(auth.contaId);
+    } catch (err) {
+      clearAuth();
+      return showError('login-email', err.message);
     }
-
-    localStorage.setItem('od-session', JSON.stringify({
-      type:               'student',
-      id:                 estudante.id,
-      name:               estudante.nome,
-      email:              estudante.email,
-      curso:              estudante.curso,
-      instituicao:        estudante.instituicao,
-      temTesteVocacional: estudante.temTesteVocacional
-    }));
 
     showSuccess('Login realizado!', 'Identidade verificada com sucesso. Bem-vindo(a) de volta ao Open Doors!', 'login');
 
@@ -238,7 +271,7 @@ function renderDropdown(dropdown, items, inputId, dropdownId) {
 }
 
 // ==============================================================
-// CADASTRO — Supabase Auth + perfil no backend
+// CADASTRO — perfil + login no backend
 // ==============================================================
 async function studentRegister() {
   const name         = document.getElementById('reg-name').value.trim();
@@ -282,8 +315,10 @@ async function studentRegister() {
   if (!semestres)    return showError('reg-semestres',    'Selecione a duração do curso.');
   if (!turno)        return showError('reg-turno',        'Selecione o turno.');
   if (!conclusao)    return showError('reg-conclusao',    'Informe a data de conclusão.');
-  if (pw.length < 8) return showError('reg-pw',  'Mínimo 8 caracteres.');
-  if (pw !== pwc)    return showError('reg-pwc',  'As senhas não coincidem.');
+  if (!googleCredentialCadastro) {
+    if (pw.length < 8) return showError('reg-pw',  'Mínimo 8 caracteres.');
+    if (pw !== pwc)    return showError('reg-pwc',  'As senhas não coincidem.');
+  }
   if (!terms)        return showError('reg-terms-field', 'Aceite os termos para continuar.');
 
   const btn = document.querySelector('#screen-register .btn-primary');
@@ -292,25 +327,12 @@ async function studentRegister() {
   btn.setAttribute('aria-busy', 'true');
 
   try {
-    // 1. Cria usuário no Supabase Auth
-    const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-      email,
-      password: pw,
-      options: { data: { nome: name, tipo: 'estudante' } }
-    });
-
-    if (authError) {
-      const msg = authError.message === 'User already registered'
-        ? 'Este e-mail já possui uma conta.'
-        : authError.message;
-      return showError('reg-email', msg);
-    }
-
-    // 2. Cria perfil no backend com o UUID do Supabase Auth
+    // 1. Cria perfil + login no backend (o Id da conta é gerado pela API)
     const payload = {
-      id:                authData.user.id,
       nome:              name,
       email:             email,
+      // Cadastro pelo Google dispensa senha: o backend valida o token
+      ...(googleCredentialCadastro ? { googleCredential: googleCredentialCadastro } : { senha: pw }),
       cpf:               cpf.replace(/\D/g, ''),
       telefone:          phone,
       dataNascimento:    dob,
@@ -328,36 +350,27 @@ async function studentRegister() {
 
     const res = await fetch(`${API}/api/estudantes`, {
       method:  'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(authData?.session?.access_token ? { Authorization: `Bearer ${authData.session.access_token}` } : {})
-      },
+      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
       body:    JSON.stringify(payload)
     });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      // Reverte o usuário auth se o perfil falhar
-      await supabaseClient.auth.signOut();
+      if (res.status === 409) return showError('reg-email', 'Este e-mail já possui uma conta.');
       throw new Error(err.erro || `Erro ${res.status}`);
     }
 
-    const criado = await res.json();
-
-    localStorage.setItem('od-session', JSON.stringify({
-      type:               'student',
-      id:                 criado.id,
-      name:               criado.nome,
-      email:              criado.email,
-      curso:              criado.curso,
-      instituicao:        criado.instituicao,
-      temTesteVocacional: false
-    }));
+    // 2. Entra com a conta recém-criada para obter o token
+    const auth = googleCredentialCadastro
+      ? (await apiLoginGoogle(googleCredentialCadastro)).auth
+      : await apiLogin(email, pw);
+    googleCredentialCadastro = null;
+    await carregarSessaoEstudante(auth.contaId);
 
     showSuccess(
       `Bem-vindo(a), ${name.split(' ')[0]}!`,
-      `Conta criada com sucesso. Enviamos um e-mail de verificação para ${email}.`,
-      'register'
+      'Conta criada com sucesso. Você já está conectado(a).',
+      'login'   // já entrou: mostra o botão para a Área do Estudante
     );
 
   } catch (err) {
@@ -371,39 +384,10 @@ async function studentRegister() {
 }
 
 // ==============================================================
-// REDEFINIÇÃO DE SENHA — Supabase Auth
+// REDEFINIÇÃO DE SENHA — a lógica fica em acesso-shared.js
 // ==============================================================
-async function sendResetCode(isResend = false) {
-  const email = document.getElementById('forgot-email').value.trim();
-  if (!isResend) {
-    clearErrors();
-    if (!email) return showError('forgot-email', 'Informe o e-mail cadastrado.');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showError('forgot-email', 'E-mail inválido.');
-  }
-
-  const btn = document.querySelector('#screen-forgot .btn-primary');
-  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
-
-  try {
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
-    if (error) return showError('forgot-email', error.message);
-
-    document.getElementById('reset-email-target').textContent = email;
-    if (isResend) {
-      alert('Novo e-mail de redefinição enviado! Verifique sua caixa de entrada.');
-    } else {
-      showSuccess(
-        'E-mail enviado!',
-        `Enviamos um link de redefinição de senha para ${email}. Verifique sua caixa de entrada.`,
-        'reset'
-      );
-    }
-  } catch (err) {
-    showError('forgot-email', 'Erro ao enviar e-mail. Tente novamente.');
-    console.error(err);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Enviar código'; }
-  }
+function mostrarSucessoRedefinicao() {
+  showSuccess('Senha redefinida!', 'Sua nova senha já está valendo. Entre com ela para continuar.', 'reset');
 }
 
 function showSuccess(title, msg, flow) {

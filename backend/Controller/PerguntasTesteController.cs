@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenDoors.Api.DTOs;
+using OpenDoors.Api.Infrastructure.Database;
 using OpenDoors.Api.Models;
 
 namespace OpenDoors.Api.Controllers
@@ -8,11 +10,11 @@ namespace OpenDoors.Api.Controllers
     [Route("api/perguntas-teste")]
     public class PerguntasTesteController : ControllerBase
     {
-        private readonly Supabase.Client _supabase;
+        private readonly AppDbContext _dbContext;
 
-        public PerguntasTesteController(Supabase.Client supabase)
+        public PerguntasTesteController(AppDbContext dbContext)
         {
-            _supabase = supabase;
+            _dbContext = dbContext;
         }
 
         // GET /api/perguntas-teste
@@ -27,23 +29,20 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var query = _supabase.From<PerguntaTeste>();
-                var resultado = await query.Get();
-
-                var perguntas = resultado.Models
+                var perguntas = await _dbContext.PerguntasTeste
                     .Where(p => p.Ativa)
-                    .AsEnumerable();
+                    .ToListAsync();
 
                 if (!string.IsNullOrEmpty(tipo))
-                    perguntas = perguntas.Where(p => p.Tipo == tipo);
+                    perguntas = perguntas.Where(p => p.Tipo == tipo).ToList();
 
                 if (!string.IsNullOrEmpty(mes))
-                    perguntas = perguntas.Where(p => p.MesReferencia == mes);
+                    perguntas = perguntas.Where(p => p.MesReferencia == mes).ToList();
                 else if (string.IsNullOrEmpty(tipo))
                     // Sem filtros: retorna fixas + perguntas do mês atual
                     perguntas = perguntas.Where(p =>
                         p.Tipo == "fixa" ||
-                        p.MesReferencia == DateTime.UtcNow.ToString("yyyy-MM"));
+                        p.MesReferencia == DateTime.UtcNow.ToString("yyyy-MM")).ToList();
 
                 var dto = perguntas
                     .OrderBy(p => p.Ordem)
@@ -65,11 +64,10 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase.From<PerguntaTeste>().Get();
-                var dto = resultado.Models
+                var resultado = await _dbContext.PerguntasTeste
                     .OrderBy(p => p.Ordem)
-                    .Select(MapearParaDto)
-                    .ToList();
+                    .ToListAsync();
+                var dto = resultado.Select(MapearParaDto).ToList();
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -99,13 +97,10 @@ namespace OpenDoors.Api.Controllers
                     CriadoEm     = DateTime.UtcNow
                 };
 
-                var resultado = await _supabase.From<PerguntaTeste>().Insert(nova);
-                var criada    = resultado.Models.FirstOrDefault();
+                await _dbContext.PerguntasTeste.AddAsync(nova);
+                await _dbContext.SaveChangesAsync();
 
-                if (criada == null)
-                    return StatusCode(500, new { erro = "Erro ao salvar a pergunta" });
-
-                return CreatedAtAction(nameof(ListarAtivas), MapearParaDto(criada));
+                return CreatedAtAction(nameof(ListarAtivas), MapearParaDto(nova));
             }
             catch (Exception ex)
             {
@@ -122,10 +117,8 @@ namespace OpenDoors.Api.Controllers
 
             try
             {
-                var resultado = await _supabase
-                    .From<PerguntaTeste>()
-                    .Where(p => p.Id == id)
-                    .Single();
+                var resultado = await _dbContext.PerguntasTeste
+                    .FirstOrDefaultAsync(p => p.Id == id);
 
                 if (resultado == null)
                     return NotFound(new { mensagem = "Pergunta não encontrada" });
@@ -135,7 +128,8 @@ namespace OpenDoors.Api.Controllers
                 resultado.Categoria     = body.Categoria ?? resultado.Categoria;
                 resultado.MesReferencia = body.MesReferencia;
 
-                await resultado.Update<PerguntaTeste>();
+                _dbContext.PerguntasTeste.Update(resultado);
+                await _dbContext.SaveChangesAsync();
                 return Ok(MapearParaDto(resultado));
             }
             catch (Exception ex)
@@ -151,16 +145,15 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
-                var resultado = await _supabase
-                    .From<PerguntaTeste>()
-                    .Where(p => p.Id == id)
-                    .Single();
+                var resultado = await _dbContext.PerguntasTeste
+                    .FirstOrDefaultAsync(p => p.Id == id);
 
                 if (resultado == null)
                     return NotFound(new { mensagem = "Pergunta não encontrada" });
 
                 resultado.Ativa = false;
-                await resultado.Update<PerguntaTeste>();
+                _dbContext.PerguntasTeste.Update(resultado);
+                await _dbContext.SaveChangesAsync();
 
                 return Ok(new { mensagem = "Pergunta desativada com sucesso" });
             }
