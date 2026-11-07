@@ -26,7 +26,15 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("PermitirFrontend", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin))
+                return false;
+
+            return origin.Equals("https://opendoorsconexa.netlify.app", StringComparison.OrdinalIgnoreCase)
+                || origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase)
+                || origin.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase);
+        })
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -112,6 +120,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("PermitirFrontend");
 app.UseAuthentication();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthorization();
 app.MapControllers();
 

@@ -143,5 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function loginAsStudent(name) {
-  setSession({ type: 'student', name });
+  setSession({
+    type: 'student',
+    name: name || 'Estudante',
+    id: null,
+    email: null
+  });
 }

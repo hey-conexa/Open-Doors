@@ -21,6 +21,7 @@ namespace OpenDoors.Api.Services
             _model = string.IsNullOrWhiteSpace(config["Groq:Model"]) ? "openai/gpt-oss-120b" : config["Groq:Model"]!;
             var apiKey = config["Groq:ApiKey"]
                 ?? throw new InvalidOperationException("Groq:ApiKey não configurada no appsettings.Development.json");
+            _model = config["Groq:Model"] ?? "openai/gpt-oss-20b";
             _http.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
         }
