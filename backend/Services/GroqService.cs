@@ -21,7 +21,6 @@ namespace OpenDoors.Api.Services
             _model = string.IsNullOrWhiteSpace(config["Groq:Model"]) ? "openai/gpt-oss-120b" : config["Groq:Model"]!;
             var apiKey = config["Groq:ApiKey"]
                 ?? throw new InvalidOperationException("Groq:ApiKey não configurada no appsettings.Development.json");
-            _model = config["Groq:Model"] ?? "openai/gpt-oss-20b";
             _http.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
         }
@@ -31,15 +30,22 @@ namespace OpenDoors.Api.Services
         /// </summary>
         public async Task<string> ChatAsync(string systemPrompt, string userPrompt)
         {
-            var payload = new
+            var payload = new Dictionary<string, object>
             {
-                model = _model,
-                messages = new[]
+                ["model"] = _model,
+                ["messages"] = new[]
                 {
                     new { role = "system", content = systemPrompt },
                     new { role = "user",   content = userPrompt   }
-                }
+                },
+                // Teto explícito de saída. Sem ele, modelos de raciocínio podem gastar o limite
+                // "pensando" e devolver o JSON cortado no meio.
+                ["max_completion_tokens"] = 4096
             };
+
+            // Os modelos gpt-oss "pensam" antes de responder; esforço baixo deixa mais espaço pro JSON.
+            if (_model.Contains("gpt-oss", StringComparison.OrdinalIgnoreCase))
+                payload["reasoning_effort"] = "low";
 
             var json = JsonConvert.SerializeObject(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -55,6 +61,12 @@ namespace OpenDoors.Api.Services
 
             dynamic? parsed = JsonConvert.DeserializeObject(body);
             var texto = (string)(parsed?.choices[0].message.content ?? "");
+            var motivoParada = (string?)(parsed?.choices[0].finish_reason);
+
+            // Resposta cortada pelo limite de tokens: o JSON chegaria incompleto
+            if (motivoParada == "length")
+                throw new InvalidOperationException(
+                    $"A resposta da IA foi cortada pelo limite de tokens (modelo '{_model}'). Tente novamente.");
 
             // Remove blocos de markdown caso a IA os inclua
             texto = Regex.Replace(texto, @"```json\s*", "");
