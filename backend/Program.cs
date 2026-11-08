@@ -96,6 +96,7 @@ builder.Services.AddScoped<OpenDoors.Api.Services.AnalisarCurriculoService>();
 builder.Services.AddScoped<OpenDoors.Api.Services.AnalisarTesteService>();
 builder.Services.AddScoped<OpenDoors.Api.Services.GerarScoreService>();
 builder.Services.AddScoped<OpenDoors.Api.Services.GerarPerguntasMensaisService>();
+builder.Services.AddScoped<OpenDoors.Api.Services.AgenteCarreiraService>();
 
 builder.Services.AddHttpClient<OpenDoors.Api.Services.JoobleService>();
 builder.Services.AddScoped<OpenDoors.Api.Services.JoobleService>();

@@ -7,10 +7,12 @@
     <link rel="stylesheet" href="../mainstyle.css">
     <link rel="stylesheet" href="../maindark.css">
     <link rel="stylesheet" href="menu-estudante.css">
+    <link rel="stylesheet" href="agente-carreira.css"> 
     <script src="../api-client.js"></script>
     <script src="../maintheme.js" defer></script>
     <script src="../navbar-profile.js" defer></script>
     <script src="menu-estudante.js" defer></script>
+    <script src="agente-carreira.js" defer></script> 
     <script src="../acessibilidade.js" defer></script>
     <link rel="icon" href="../images/favicon/favicon-96x96.png" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -378,6 +380,19 @@
                 </div>
             </div>
 
+        </section>
+
+        <section class="me-section" id="agente-carreira" aria-labelledby="agente-title">
+            <div class="me-section__header">
+                <h2 id="agente-title">Assistente de Carreira</h2>
+                <span class="me-badge me-badge--new">Novo</span>
+            </div>
+            <div class="ag-intro">
+                <p>Nossa IA lê o seu currículo e sugere como melhorá-lo: ajustes no currículo, temas para estudar, projetos para o portfólio e conteúdos para publicar no LinkedIn, mostrando na prática o que você sabe fazer.</p>
+                <button type="button" id="agBtnGerar" class="me-btn me-btn--primary">Gerar sugestões</button>
+            </div>
+            <div id="agStatus" class="ag-status" role="status" aria-live="polite"></div>
+            <div id="agResultado" class="ag-resultado" hidden></div>
         </section>
 
         <section class="me-section" aria-labelledby="config-title">
