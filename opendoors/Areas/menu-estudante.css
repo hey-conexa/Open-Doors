@@ -1405,3 +1405,215 @@ h1, h2, h3, h4, h5, h6, strong, b {
 [data-theme="dark"] .ia-progresso__barra-bg {
     background: rgba(255,255,255,0.08);
 }
+
+
+/* ==============================================================
+   ÁREA DO ESTUDANTE EM PÁGINAS
+   Painel · Vagas · Teste vocacional · Currículo
+   ============================================================== */
+
+/* Abas que ligam as quatro páginas (ficam logo abaixo da navbar) */
+.me-abas {
+    display: flex;
+    gap: 4px;
+    padding: 0 clamp(20px, 5vw, 60px);
+    background: #e0f7ff;
+    border-bottom: 1px solid var(--gray-200);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.me-abas::-webkit-scrollbar { display: none; }
+
+.me-aba {
+    flex-shrink: 0;
+    padding: 14px 16px 12px;
+    border-bottom: 3px solid transparent;
+    color: var(--gray-700);
+    font-size: 0.92rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--transition), border-color var(--transition);
+}
+.me-aba:hover { color: var(--blue); }
+.me-aba[aria-current="page"] {
+    color: var(--blue);
+    border-bottom-color: var(--blue);
+}
+.me-aba:focus-visible { outline: 2px solid var(--blue); outline-offset: -4px; border-radius: 6px; }
+
+[data-theme="dark"] .me-abas {
+    background: #131820;
+    border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+[data-theme="dark"] .me-aba { color: #b4c0c8; }
+[data-theme="dark"] .me-aba:hover,
+[data-theme="dark"] .me-aba[aria-current="page"] { color: #4fb8dc; border-bottom-color: #4fb8dc; }
+
+/* Título de cada subpágina */
+.me-pagina {
+    padding: clamp(28px, 5vw, 44px) clamp(20px, 5vw, 60px) clamp(20px, 3vw, 28px);
+    background: #e0f7ff;
+    border-bottom: 1px solid var(--gray-200);
+}
+.me-pagina h1 {
+    font-family: "Oswald", sans-serif;
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    color: var(--text);
+    line-height: 1.15;
+}
+.me-pagina p {
+    margin-top: 8px;
+    max-width: 62ch;
+    color: var(--gray-700);
+    font-size: 0.98rem;
+}
+[data-theme="dark"] .me-pagina {
+    background: #131820;
+    border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+[data-theme="dark"] .me-pagina h1 { color: #eef0f4; }
+[data-theme="dark"] .me-pagina p { color: #b4c0c8; }
+
+/* Atalhos do painel para as três páginas */
+.me-atalhos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.me-atalho {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+    box-shadow: 0 8px 20px rgba(9, 45, 58, 0.12);
+    color: var(--text);
+    text-decoration: none;
+    transition: transform var(--transition), border-color var(--transition);
+}
+.me-atalho:hover { transform: translateY(-2px); border-color: var(--blue); }
+
+.me-atalho__icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(8, 124, 167, 0.12);
+    color: var(--blue);
+}
+.me-atalho__texto { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.me-atalho__texto strong { font-size: 1rem; }
+.me-atalho__texto span { font-size: 0.84rem; color: var(--gray-700); }
+.me-atalho__seta { flex-shrink: 0; color: var(--gray-400); }
+
+[data-theme="dark"] .me-atalho {
+    background: #172227;
+    border-color: rgba(160, 183, 191, 0.24);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    color: #eef0f4;
+}
+[data-theme="dark"] .me-atalho__texto span { color: #b4c0c8; }
+[data-theme="dark"] .me-atalho__icon { color: #4fb8dc; }
+
+@media (max-width: 1100px) {
+    .me-atalhos { grid-template-columns: 1fr; }
+}
+
+/* ---------- Página do currículo ---------- */
+.cv-status {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 18px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    border-left: 3px solid var(--gold);
+    background: var(--white);
+}
+.cv-status--ok { border-left-color: #16a34a; }
+.cv-status span { font-size: 0.9rem; color: var(--gray-700); }
+
+.cv-envio { margin-top: 24px; max-width: 620px; }
+.cv-envio__label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text); }
+.cv-envio .me-helper { margin-top: 8px; }
+.cv-envio__acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+
+.cv-aviso { margin-top: 12px; font-size: 0.9rem; color: var(--gray-700); min-height: 1.4em; }
+.cv-aviso--ok   { color: #15803d; }
+.cv-aviso--erro { color: #dc2626; }
+
+.cv-analise { display: flex; flex-direction: column; gap: 24px; }
+
+.cv-resumo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+.cv-resumo__item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+}
+.cv-resumo__item span { font-size: 0.8rem; color: var(--gray-700); }
+.cv-resumo__item strong { font-size: 1rem; color: var(--text); }
+
+.cv-bloco__titulo { font-size: 1rem; color: var(--text); margin-bottom: 12px; }
+.cv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.cv-experiencias { list-style: none; display: flex; flex-direction: column; gap: 12px; padding: 0; }
+.cv-experiencia {
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+}
+.cv-experiencia strong { display: block; color: var(--text); }
+.cv-experiencia__periodo { display: block; margin-top: 2px; font-size: 0.8rem; color: var(--gray-700); }
+.cv-experiencia p { margin-top: 6px; font-size: 0.9rem; color: var(--gray-700); }
+
+[data-theme="dark"] .cv-status,
+[data-theme="dark"] .cv-resumo__item,
+[data-theme="dark"] .cv-experiencia {
+    background: #172227;
+    border-color: rgba(160, 183, 191, 0.24);
+}
+[data-theme="dark"] .cv-status--ok { border-left-color: #22c55e; }
+[data-theme="dark"] .cv-status:not(.cv-status--ok) { border-left-color: var(--gold); }
+[data-theme="dark"] .cv-status span,
+[data-theme="dark"] .cv-resumo__item span,
+[data-theme="dark"] .cv-experiencia__periodo,
+[data-theme="dark"] .cv-experiencia p,
+[data-theme="dark"] .cv-aviso { color: #b4c0c8; }
+[data-theme="dark"] .cv-envio__label,
+[data-theme="dark"] .cv-bloco__titulo,
+[data-theme="dark"] .cv-resumo__item strong,
+[data-theme="dark"] .cv-experiencia strong { color: #eef0f4; }
+[data-theme="dark"] .cv-aviso--ok   { color: #4ade80; }
+[data-theme="dark"] .cv-aviso--erro { color: #f87171; }
+
+/* Botões com o atributo hidden somem de verdade (.me-btn define display) */
+.me-btn[hidden] { display: none; }
+
+/* Na página, a área de envio segue o tema (a original foi feita para o modal escuro) */
+.cv-envio .me-dropzone {
+    min-height: 140px;
+    background: rgba(255, 255, 255, 0.55);
+    border-width: 2px;
+}
+.cv-envio .me-dropzone p { color: var(--gray-700); font-size: 0.92rem; }
+.cv-envio .me-dropzone:hover,
+.cv-envio .me-dropzone:focus-visible { border-color: var(--blue); background: rgba(255, 255, 255, 0.8); }
+.cv-envio .me-dropzone.is-dragover { border-color: #11b5ea; background: rgba(17, 181, 234, 0.12); }
+
+[data-theme="dark"] .cv-envio .me-dropzone { background: rgba(12, 16, 24, 0.8); }
+[data-theme="dark"] .cv-envio .me-dropzone p { color: #b8c0cf; }
+[data-theme="dark"] .cv-envio .me-dropzone:hover { background: rgba(12, 16, 24, 0.95); }

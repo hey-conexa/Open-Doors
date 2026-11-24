@@ -1,0 +1,182 @@
+/* ==============================================================
+   VIDRO NAS ÁREAS — Estudante (Painel, Vagas, Teste, Currículo) e Empresa
+   Mesmo material das telas de acesso e da homepage: campo de luz
+   nas cores da marca atrás de painéis de vidro fosco.
+
+   Carregar DEPOIS de ../vidro.css (variáveis --vidro-* e --luz-*)
+   e do CSS da página (menu-estudante.css / menu-empresa.css).
+   As regras usam [data-theme] para valer nos dois temas por cima
+   das cores fixas do CSS de cada página; as cores mudam pelas variáveis.
+   ============================================================== */
+
+/* --------------------------------------------------------------
+   Campo de luz fixo atrás da página
+   -------------------------------------------------------------- */
+[data-theme] body {
+    background: #d9eef4;
+    isolation: isolate;
+}
+[data-theme="dark"] body { background: #0d1418; }
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: -12%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(22% 30% at 78% 22%, var(--luz-petroleo) 0%, transparent 62%),
+        radial-gradient(26% 32% at 46% 64%, var(--luz-agua) 0%, transparent 64%),
+        radial-gradient(30% 34% at 96% 90%, var(--luz-profundo) 0%, transparent 66%),
+        radial-gradient(20% 24% at 14% 84%, var(--luz-ambar) 0%, transparent 62%),
+        radial-gradient(24% 28% at 8% 16%, var(--luz-agua) 0%, transparent 66%);
+    filter: blur(6px);
+    animation: luz-deriva 38s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::before { animation: none; }
+}
+
+/* Material de vidro reaproveitado pelos blocos abaixo */
+.me-card, .me-vaga, .me-candidatura, .me-config-item, .me-atalho,
+.voc-area-card, .cv-status, .cv-resumo__item, .cv-experiencia, .ag-card,
+.em-hero, .em-section, .em-stats {
+    -webkit-backdrop-filter: var(--vidro-desfoque);
+    backdrop-filter: var(--vidro-desfoque);
+}
+
+/* --------------------------------------------------------------
+   Faixas: navbar, abas, topo das páginas e rodapé
+   -------------------------------------------------------------- */
+[data-theme] .navbar {
+    background: color-mix(in srgb, #e0f7ff 55%, transparent);
+    border-bottom-color: var(--vidro-borda);
+    -webkit-backdrop-filter: var(--vidro-desfoque);
+    backdrop-filter: var(--vidro-desfoque);
+}
+[data-theme="dark"] .navbar { background: color-mix(in srgb, #131820 60%, transparent); }
+
+[data-theme] .me-hero,
+[data-theme] .me-abas,
+[data-theme] .me-pagina,
+[data-theme] .footer-strip {
+    background: var(--vidro-camada);
+    border-color: var(--vidro-borda);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+}
+
+/* Seções do estudante: faixas transparentes, o vidro fica nos cartões */
+[data-theme] .me-section {
+    background: transparent;
+    border-bottom-color: var(--vidro-borda);
+}
+
+/* --------------------------------------------------------------
+   Cartões de vidro (estudante)
+   -------------------------------------------------------------- */
+[data-theme] .me-card,
+[data-theme] .me-vaga,
+[data-theme] .me-candidatura,
+[data-theme] .me-config-item,
+[data-theme] .me-atalho,
+[data-theme] .voc-area-card,
+[data-theme] .cv-status,
+[data-theme] .cv-resumo__item,
+[data-theme] .cv-experiencia,
+[data-theme] .ag-card {
+    background: var(--vidro-fundo);
+    border-color: var(--vidro-borda);
+    box-shadow: var(--vidro-sombra), var(--vidro-brilho);
+}
+
+/* As marcas coloridas da borda esquerda continuam valendo */
+[data-theme] .me-card--todo { border-left-color: var(--blue); }
+[data-theme] .cv-status { border-left-color: var(--gold); }
+[data-theme] .cv-status--ok { border-left-color: #16a34a; }
+
+[data-theme] .me-atalho:hover,
+[data-theme] .me-vaga:hover,
+[data-theme] .me-config-item:hover { border-color: var(--blue); }
+
+/* Ícones e pequenas superfícies dentro do vidro */
+[data-theme] .me-vaga__logo,
+[data-theme] .me-config-item__icon,
+[data-theme] .voc-area-card__icon {
+    background: var(--vidro-campo);
+}
+
+/* Quadro vazio ("nenhuma candidatura") */
+[data-theme] .me-candidaturas__empty {
+    background: var(--vidro-camada);
+    border-color: var(--vidro-borda);
+}
+
+/* Opções do teste vocacional */
+[data-theme] .voc-opt-choice,
+[data-theme] .voc-opt-scale:not(.selected) {
+    background: var(--vidro-campo);
+    border-color: var(--vidro-borda);
+}
+[data-theme] .voc-opt-choice.selected { background: rgba(8, 124, 167, 0.16); border-color: var(--blue); }
+
+/* Área de envio do currículo */
+[data-theme] .cv-envio .me-dropzone { background: var(--vidro-campo); }
+[data-theme] .cv-envio .me-dropzone:hover,
+[data-theme] .cv-envio .me-dropzone:focus-visible { background: var(--vidro-campo-foco); }
+
+/* --------------------------------------------------------------
+   Área da empresa: painéis de vidro sobre o campo de luz
+   -------------------------------------------------------------- */
+[data-theme] .em-hero,
+[data-theme] .em-section {
+    background: var(--vidro-fundo);
+    border-color: var(--vidro-borda);
+    box-shadow: var(--vidro-sombra), var(--vidro-brilho);
+}
+
+[data-theme] .em-stats {
+    background: var(--vidro-camada);
+    border-color: var(--vidro-borda);
+    box-shadow: var(--vidro-brilho);
+}
+[data-theme] .em-stat { border-right-color: var(--vidro-borda); }
+
+[data-theme] .em-hero__logo { background: var(--vidro-campo); border-color: var(--vidro-borda); }
+
+[data-theme] .em-vaga:hover,
+[data-theme] .em-candidatura:hover { background: var(--vidro-camada); }
+
+/* --------------------------------------------------------------
+   Modais: vidro quase opaco, para o formulário ficar legível
+   -------------------------------------------------------------- */
+[data-theme] .me-modal-backdrop,
+[data-theme] .em-modal-backdrop {
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+
+[data-theme] .em-modal {
+    background: color-mix(in srgb, var(--vidro-opaco) 92%, transparent);
+    border-color: var(--vidro-borda);
+    box-shadow: var(--vidro-sombra), var(--vidro-brilho);
+    -webkit-backdrop-filter: var(--vidro-desfoque);
+    backdrop-filter: var(--vidro-desfoque);
+}
+
+/* Sem suporte a desfoque: superfícies mais opacas, para o texto continuar legível */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    [data-theme] .me-card, [data-theme] .me-vaga, [data-theme] .me-candidatura,
+    [data-theme] .me-config-item, [data-theme] .me-atalho, [data-theme] .voc-area-card,
+    [data-theme] .cv-status, [data-theme] .cv-resumo__item, [data-theme] .cv-experiencia,
+    [data-theme] .ag-card, [data-theme] .em-hero, [data-theme] .em-section {
+        background: var(--vidro-opaco);
+    }
+}
+
+/* No computador, o grupo de links fica sobre o vidro da navbar
+   (o fundo escuro do maindark.css só faz sentido no menu do celular) */
+@media (min-width: 769px) {
+    [data-theme="dark"] .menu-links { background: transparent; }
+}

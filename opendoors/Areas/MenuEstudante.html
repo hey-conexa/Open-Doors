@@ -6,19 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../mainstyle.css">
     <link rel="stylesheet" href="../maindark.css">
-    <link rel="stylesheet" href="menu-estudante.css">
-    <link rel="stylesheet" href="agente-carreira.css"> 
+    <link rel="stylesheet" href="menu-estudante.css?v=2026-11-23c">
     <script src="../api-client.js"></script>
     <script src="../maintheme.js" defer></script>
     <script src="../navbar-profile.js" defer></script>
-    <script src="menu-estudante.js" defer></script>
-    <script src="agente-carreira.js" defer></script> 
+    <script src="menu-estudante.js?v=2026-11-23" defer></script>
     <script src="../acessibilidade.js" defer></script>
     <link rel="icon" href="../images/favicon/favicon-96x96.png" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Oswald:wght@200..700&display=swap" rel="stylesheet">
     <title>Minha Área — Open Doors</title>
+    <link rel="stylesheet" href="../vidro.css?v=2026-11-23b">
+    <link rel="stylesheet" href="vidro-areas.css?v=2026-11-23b">
     <link rel="stylesheet" href="../acessibilidade.css">
 </head>
 
@@ -42,7 +42,7 @@
             <div class="nav-right">
             <ul class="menu-links" id="menuLinks" role="menubar">
                 <li role="none"><a href="../OpenDoors.html" role="menuitem">Home</a></li>
-                <li role="none"><a href="#" role="menuitem">Vagas</a></li>
+                <li role="none"><a href="Vagas.html" role="menuitem">Vagas</a></li>
                 <li role="none"><a href="#" role="menuitem">Sobre nós</a></li>
                 <li role="none"><a href="#" role="menuitem">Contato</a></li>
 
@@ -84,7 +84,7 @@
 
                     <div id="drawerGuest">
                         <p class="drawer-title">Acessar plataforma</p>
-                        <a href="../Acesso/AcessoEstudantes.html" class="drawer-item">
+                        <a href="../Acesso/Acesso.html#estudante" class="drawer-item">
                             <span class="drawer-item__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span>
                             <span class="drawer-item__text">
                                 <strong>Sou Estudante</strong>
@@ -92,7 +92,7 @@
                             </span>
                             <svg class="drawer-item__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                         </a>
-                        <a href="../Acesso/AcessoEmpresas.html" class="drawer-item">
+                        <a href="../Acesso/Acesso.html#empresa" class="drawer-item">
                             <span class="drawer-item__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
                             <span class="drawer-item__text">
                                 <strong>Sou Empresa</strong>
@@ -144,6 +144,12 @@
         </nav>
     </header>
 
+    <nav class="me-abas" aria-label="Seções da sua área">
+        <a href="MenuEstudante.html" class="me-aba" aria-current="page">Painel</a>
+        <a href="Vagas.html" class="me-aba">Vagas</a>
+        <a href="TesteVocacional.html" class="me-aba">Teste vocacional</a>
+        <a href="Curriculo.html" class="me-aba">Currículo</a>
+    </nav>
 
     <main id="main-content">
 
@@ -156,7 +162,7 @@
                 </div>
                 <div class="me-hero__actions">
                     <button type="button" id="btnEditarPerfil" class="me-btn me-btn--secondary">Editar perfil</button>
-                    <a href="#vagas" class="me-btn me-btn--primary">Ver vagas</a>
+                    <a href="Vagas.html" class="me-btn me-btn--primary">Ver vagas</a>
                 </div>
             </div>
 
@@ -171,7 +177,6 @@
                 <p class="me-progress__tip">Complete seu perfil para aumentar suas chances de ser encontrado por empresas.</p>
             </div>
         </section>
-
 
         <section class="me-section" id="perfil" aria-labelledby="onboarding-title">
             <div class="me-section__header">
@@ -193,7 +198,7 @@
                         <strong>Currículo</strong>
                         <span>Envie seu CV para candidaturas com 1 clique</span>
                     </div>
-                    <button type="button" id="btnCurriculo" class="me-btn me-btn--ghost me-btn--sm" aria-label="Enviar currículo">Enviar</button>
+                    <a href="Curriculo.html" id="btnCurriculo" class="me-btn me-btn--ghost me-btn--sm" aria-label="Ir para a página do currículo">Enviar</a>
                 </div>
                 <div class="me-card me-card--todo" role="listitem">
                     <div class="me-card__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
@@ -222,180 +227,30 @@
             </div>
         </section>
 
-
-        <section class="me-section" id="vagas" aria-labelledby="vagas-title">
+        <section class="me-section" aria-labelledby="atalhos-title">
             <div class="me-section__header">
-                <h2 id="vagas-title">Vagas recomendadas</h2>
-                <button class="me-link" onclick="verTodasVagas()" style="background:none;border:none;cursor:pointer;font:inherit">Ver todas</button>
+                <h2 id="atalhos-title">Sua jornada</h2>
             </div>
-            <div class="me-vagas" role="list" aria-label="Lista de vagas recomendadas">
-
-                <article class="me-vaga" role="listitem">
-                    <div class="me-vaga__header">
-                        <div class="me-vaga__logo" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9" y1="14.5" x2="15" y2="14.5"/></svg></div>
-                        <div>
-                            <h3 class="me-vaga__title">Estágio em Desenvolvimento Web</h3>
-                            <p class="me-vaga__company">TechStartup São Paulo</p>
-                        </div>
-                        <span class="me-badge me-badge--new" aria-label="Vaga nova">Nova</span>
-                    </div>
-                    <div class="me-vaga__tags" aria-label="Características da vaga">
-                        <span class="me-tag">Remoto</span>
-                        <span class="me-tag">6h/dia</span>
-                        <span class="me-tag">React</span>
-                        <span class="me-tag">R$ 1.200/mês</span>
-                    </div>
-                    <p class="me-vaga__desc">Buscamos estudante de TI para apoiar time de produto. Flexibilidade de horário e ambiente descontraído.</p>
-                    <div class="me-vaga__footer">
-                        <span class="me-vaga__date">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            Publicada há 2 dias
-                        </span>
-                        <button class="me-btn me-btn--primary me-btn--sm" aria-label="Candidatar-se à vaga de Estágio em Desenvolvimento Web">Candidatar-se</button>
-                    </div>
-                </article>
-
-                <article class="me-vaga" role="listitem">
-                    <div class="me-vaga__header">
-                        <div class="me-vaga__logo" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
-                        <div>
-                            <h3 class="me-vaga__title">Jovem Aprendiz — Financeiro</h3>
-                            <p class="me-vaga__company">Banco Meridional</p>
-                        </div>
-                    </div>
-                    <div class="me-vaga__tags" aria-label="Características da vaga">
-                        <span class="me-tag">Presencial</span>
-                        <span class="me-tag">4h/dia</span>
-                        <span class="me-tag">Excel</span>
-                        <span class="me-tag">R$ 850/mês</span>
-                    </div>
-                    <p class="me-vaga__desc">Programa de aprendizagem com formação em finanças, benefícios completos e possibilidade de efetivação.</p>
-                    <div class="me-vaga__footer">
-                        <span class="me-vaga__date">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            Publicada há 5 dias
-                        </span>
-                        <button class="me-btn me-btn--primary me-btn--sm" aria-label="Candidatar-se à vaga de Jovem Aprendiz Financeiro">Candidatar-se</button>
-                    </div>
-                </article>
-
-                <article class="me-vaga" role="listitem">
-                    <div class="me-vaga__header">
-                        <div class="me-vaga__logo" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
-                        <div>
-                            <h3 class="me-vaga__title">Estágio em Design de Produto</h3>
-                            <p class="me-vaga__company">Agência Criativa SP</p>
-                        </div>
-                        <span class="me-badge me-badge--new" aria-label="Vaga nova">Nova</span>
-                    </div>
-                    <div class="me-vaga__tags" aria-label="Características da vaga">
-                        <span class="me-tag">Híbrido</span>
-                        <span class="me-tag">6h/dia</span>
-                        <span class="me-tag">Figma</span>
-                        <span class="me-tag">R$ 1.100/mês</span>
-                    </div>
-                    <p class="me-vaga__desc">Participe de projetos reais de UI/UX com mentoria de seniores. Portfólio garantido em 3 meses.</p>
-                    <div class="me-vaga__footer">
-                        <span class="me-vaga__date">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            Publicada hoje
-                        </span>
-                        <button class="me-btn me-btn--primary me-btn--sm" aria-label="Candidatar-se à vaga de Estágio em Design de Produto">Candidatar-se</button>
-                    </div>
-                </article>
-
+            <div class="me-atalhos">
+                <a href="Vagas.html" class="me-atalho">
+                    <span class="me-atalho__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg></span>
+                    <span class="me-atalho__texto"><strong>Vagas</strong><span>Vagas recomendadas para você e suas candidaturas</span></span>
+                    <svg class="me-atalho__seta" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
+                <a href="TesteVocacional.html" class="me-atalho">
+                    <span class="me-atalho__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></span>
+                    <span class="me-atalho__texto"><strong>Teste vocacional</strong><span>Descubra as áreas que combinam com você</span></span>
+                    <span class="me-badge me-badge--warn" id="voc-badge">Obrigatório</span>
+                </a>
+                <a href="Curriculo.html" class="me-atalho">
+                    <span class="me-atalho__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+                    <span class="me-atalho__texto"><strong>Currículo</strong><span>Envie seu PDF e veja a análise da IA</span></span>
+                    <svg class="me-atalho__seta" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
             </div>
         </section>
 
-
-        <section class="me-section" aria-labelledby="candidaturas-title">
-            <div class="me-section__header">
-                <h2 id="candidaturas-title">Minhas candidaturas</h2>
-            </div>
-            <div class="me-candidaturas" id="candidaturasLista" role="list" aria-label="Suas candidaturas ativas">
-                <div class="me-candidaturas__empty" id="candidaturasEmpty">
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
-                    <p>Você ainda não se candidatou a nenhuma vaga.</p>
-                    <small>Candidate-se às vagas recomendadas acima para acompanhar aqui.</small>
-                </div>
-            </div>
-        </section>
-
-
-
-        <section class="me-section me-section--last" id="teste-vocacional" aria-labelledby="voc-title">
-            <div class="me-section__header">
-                <h2 id="voc-title">Teste Vocacional</h2>
-                <span class="me-badge me-badge--warn" id="voc-badge">Obrigatório</span>
-            </div>
-
-
-            <div id="voc-intro" class="voc-intro">
-                <div class="voc-intro__icon" aria-hidden="true"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" stroke="none" opacity="0.3"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></div>
-                <h3>Descubra sua área ideal</h3>
-                <p>Responda algumas perguntas rápidas sobre seus interesses e habilidades. Com base nas suas respostas, vamos recomendar as áreas de atuação e vagas mais alinhadas ao seu perfil.</p>
-                <div class="voc-intro__meta">
-                    <span><strong id="voc-total-intro">45</strong> perguntas</span>
-                    <span><strong>~5</strong> minutos</span>
-                    <span>Pode refazer quando quiser</span>
-                </div>
-                    <button id="vocStartBtn" class="me-btn me-btn--primary" aria-label="Iniciar teste vocacional">Iniciar teste</button>
-            </div>
-
-
-            <div id="voc-test" class="voc-test" style="display:none" aria-live="polite">
-
-
-                <div class="voc-progress" role="group" aria-label="Progresso do teste">
-                    <div class="voc-progress__bar" role="progressbar" id="vocProgressBar"
-                         aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso">
-                        <div class="voc-progress__fill" id="vocProgressFill" style="width:0%"></div>
-                    </div>
-                    <span class="voc-progress__label">Pergunta <strong id="vocQNum">1</strong> de <strong class="voc-total">45</strong></span>
-                </div>
-
-                <div class="voc-question-wrap" id="vocQuestionWrap">
-                    <p class="voc-question__type" id="vocQType"></p>
-                    <h3 class="voc-question__text" id="vocQText"></h3>
-                    <div class="voc-options" id="vocOptions" role="group" aria-labelledby="vocQText"></div>
-                </div>
-
-                <div class="voc-nav">
-                    <button class="me-btn me-btn--ghost" id="vocBtnBack" onclick="vocBack()" aria-label="Pergunta anterior" style="visibility:hidden">← Anterior</button>
-                    <button class="me-btn me-btn--primary" id="vocBtnNext" onclick="vocNext()" aria-label="Próxima pergunta" disabled>Próxima →</button>
-                </div>
-            </div>
-
-
-            <div id="voc-result" class="voc-result" style="display:none" aria-live="polite">
-                <div class="voc-result__header">
-                    <div class="voc-result__icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
-                    <h3>Seu perfil vocacional</h3>
-                    <p id="vocResultDesc"></p>
-                </div>
-                <div class="voc-areas" id="vocAreas" role="list" aria-label="Áreas recomendadas"></div>
-                <div class="voc-result__actions">
-                    <button class="me-btn me-btn--ghost" onclick="vocRestart()" aria-label="Refazer o teste">Refazer teste</button>
-                    <a href="#vagas" class="me-btn me-btn--primary">Ver vagas recomendadas</a>
-                </div>
-            </div>
-
-        </section>
-
-        <section class="me-section" id="agente-carreira" aria-labelledby="agente-title">
-            <div class="me-section__header">
-                <h2 id="agente-title">Assistente de Carreira</h2>
-                <span class="me-badge me-badge--new">Novo</span>
-            </div>
-            <div class="ag-intro">
-                <p>Nossa IA lê o seu currículo e sugere como melhorá-lo: ajustes no currículo, temas para estudar, projetos para o portfólio e conteúdos para publicar no LinkedIn, mostrando na prática o que você sabe fazer.</p>
-                <button type="button" id="agBtnGerar" class="me-btn me-btn--primary">Gerar sugestões</button>
-            </div>
-            <div id="agStatus" class="ag-status" role="status" aria-live="polite"></div>
-            <div id="agResultado" class="ag-resultado" hidden></div>
-        </section>
-
-        <section class="me-section" aria-labelledby="config-title">
+        <section class="me-section me-section--last" aria-labelledby="config-title">
             <div class="me-section__header">
                 <h2 id="config-title">Minha conta</h2>
             </div>
