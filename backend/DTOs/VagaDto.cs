@@ -29,5 +29,10 @@ namespace OpenDoors.Api.DTOs
         public DateTime? CriadoEm { get; set; }
         public DateTime? ExpiraEm { get; set; }
         public DateTime? AtualizadoEm { get; set; }
+
+        // true = vaga de empresa que se cadastrou pelo site (aparece primeiro)
+        // false = vaga de empresa de exemplo (criado_por_admin)
+        // null = não calculado neste endpoint
+        public bool? EmpresaCadastrada { get; set; }
     }
 }

@@ -1,10 +1,6 @@
 /* Cliente da API Open Doors — autenticação com o JWT próprio do backend */
 
-// Rodando localmente usa a API local; fora disso, o endereço público da API
-const API = ['localhost', '127.0.0.1'].includes(window.location.hostname)
-  ? 'http://localhost:5089'
-  : 'https://monotype-sudoku-arousal.ngrok-free.dev';
-
+const API = 'https://dq9hh10hw71hk.cloudfront.net';
 const AUTH_KEY = 'od-auth';
 
 // Token salvo após o login: { token, expiraEm, contaId, tipoUsuario }
