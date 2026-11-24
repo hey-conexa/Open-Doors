@@ -241,121 +241,6 @@ section,
 }
 
 
-/* BOTÕES TOPO */
-
-.botoes-topo {
-    display: flex;
-    gap: 12px;
-}
-
-.botoes-topo a {
-    flex: 1;
-    text-decoration: none;
-}
-
-.botoes-topo button {
-    position: relative;
-    border: none;
-    width: 100%;
-    height: 500px;
-    border-radius: 20px;
-    cursor: pointer;
-    padding: 0;
-    overflow: hidden;
-    display: flex;
-    align-items: flex-end;
-    transition: transform 0.35s cubic-bezier(.4,0,.2,1), box-shadow 0.35s cubic-bezier(.4,0,.2,1);
-}
-
-.botoes-topo button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
-}
-
-
-/* IMAGEM DO BOTÃO */
-
-.btn-top__bg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: top center;
-    border-radius: 0;
-    z-index: 0;
-    transition: transform 0.5s cubic-bezier(.4,0,.2,1);
-}
-
-.botoes-topo button:hover .btn-top__bg {
-    transform: scale(1.05);
-}
-
-.btn-top__overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    border-radius: 0;
-    background: linear-gradient(
-        to bottom,
-        rgba(0,0,0,0.04) 0%,
-        rgba(0,0,0,0.10) 40%,
-        rgba(0,0,0,0.62) 75%,
-        rgba(0,0,0,0.82) 100%
-    );
-    transition: background 0.35s ease;
-}
-
-.botoes-topo button:hover .btn-top__overlay {
-    background: linear-gradient(
-        to bottom,
-        rgba(8,124,167,0.08) 0%,
-        rgba(0,0,0,0.12) 35%,
-        rgba(0,0,0,0.68) 72%,
-        rgba(0,0,0,0.88) 100%
-    );
-}
-
-.btn-top__content {
-    position: relative;
-    z-index: 2;
-    width: 100%;
-    padding: 0 28px 28px;
-    text-align: left;
-    color: #fff;
-}
-
-.btn-top__title {
-    font-family: "Oswald", sans-serif;
-    font-size: clamp(1.6rem, 3vw, 2.2rem);
-    font-weight: 600;
-    line-height: 1.1;
-    margin-bottom: 0;
-    color: #fff;
-    letter-spacing: 0.01em;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.4);
-}
-
-.btn-top__desc {
-    display: block;
-    font-size: 0.88rem;
-    line-height: 1.55;
-    color: rgba(255,255,255,0.88);
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease, opacity 0.4s ease, margin-top 0.3s ease;
-    margin-top: 0;
-    text-shadow: 0 1px 6px rgba(0,0,0,0.5);
-}
-
-.botoes-topo button:hover .btn-top__desc {
-    max-height: 80px;
-    opacity: 1;
-    margin-top: 8px;
-}
-
-
 /* SEÇÃO MURAL */
 
 .mural {
@@ -764,9 +649,6 @@ section,
  /* TOPO DO SITE  */
 
     .topo-site { min-height: auto; padding-top: 48px; padding-bottom: 48px; }
-    .botoes-topo { flex-direction: column; gap: 12px; width: 100%; max-width: 460px; }
-    .botoes-topo button { height: 260px; }
-    .btn-top__content { padding: 0 20px 20px; }
 
     .mural-thumbs { display: none; }
 

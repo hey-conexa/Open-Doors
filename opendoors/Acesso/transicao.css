@@ -1,0 +1,28 @@
+/* Transição deslizante entre a tela de escolha (Acesso.html) e as telas
+   de estudante/empresa. Carregada nas três páginas: a transição só acontece
+   quando as duas páginas da navegação têm esta regra.
+   Navegadores sem suporte simplesmente trocam de página, como antes. */
+
+@view-transition { navigation: auto; }
+
+/* A navbar fica parada; só o conteúdo desliza */
+.navbar { view-transition-name: navbar; }
+
+/* Indo para o login: a página atual sai pela esquerda e a nova entra pela direita */
+::view-transition-old(root) { animation: 0.42s cubic-bezier(0.65, 0, 0.35, 1) both sai-esquerda; }
+::view-transition-new(root) { animation: 0.42s cubic-bezier(0.65, 0, 0.35, 1) both entra-direita; }
+
+/* Voltando para a escolha: o caminho inverso */
+html:active-view-transition-type(voltar)::view-transition-old(root) { animation-name: sai-direita; }
+html:active-view-transition-type(voltar)::view-transition-new(root) { animation-name: entra-esquerda; }
+
+@keyframes sai-esquerda   { to   { transform: translateX(-30%); opacity: 0; } }
+@keyframes entra-direita  { from { transform: translateX(30%);  opacity: 0; } }
+@keyframes sai-direita    { to   { transform: translateX(30%);  opacity: 0; } }
+@keyframes entra-esquerda { from { transform: translateX(-30%); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
+}

@@ -131,10 +131,6 @@ h1, h2, h3, h4, h5, h6, strong, b {
 [data-theme="dark"] .msg-sub {
     color: #8a909e;
 }
-[data-theme="dark"] .botoes-topo button {
-    background: #181b22;
-    color: #eef0f4;
-}
 
 /* SEÇÃO MURAL */
 

@@ -43,9 +43,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const name    = session.name || 'Estudante'
         const initial = name.charAt(0).toUpperCase()
 
-        document.getElementById('heroName').textContent   = `Olá, ${name.split(' ')[0]}!`
-        document.getElementById('heroAvatar').textContent = initial
+        // A saudação e o avatar só existem no painel (MenuEstudante.html)
+        const heroName = document.getElementById('heroName')
+        if (heroName) heroName.textContent = `Olá, ${name.split(' ')[0]}!`
+        const heroAvatar = document.getElementById('heroAvatar')
+        if (heroAvatar) heroAvatar.textContent = initial
         updateHeroAvatar()
+
+        // Avisa os scripts de cada página (ex.: curriculo.js) que a sessão e os dados estão prontos
+        document.dispatchEvent(new CustomEvent('estudante-pronto', { detail: { session, estudante: currentStudent } }))
 
         atualizarProgressoPerfil()
 
@@ -66,8 +72,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (e) { console.warn('Erro ao verificar teste:', e); }
         }
 
-        // ---- Carregar recomendações de vagas ----
-        await carregarRecomendadoVagas(session.id)
+        // ---- Carregar recomendações de vagas (só na página de vagas) ----
+        if (document.querySelector('.me-vagas')) await carregarRecomendadoVagas(session.id)
 
         // ---- Carregar candidaturas reais ----
         carregarCandidaturas(session.id).catch(() => {});
@@ -298,9 +304,15 @@ function atualizarProgressoPerfil() {
     // 25% por cada item: foto, currículo, habilidades, teste vocacional
     const pct = [hasFoto, hasCurriculo, hasHabilidades, hasTeste].filter(Boolean).length * 25;
 
-    document.getElementById('progressPct').textContent  = pct + '%';
-    document.getElementById('progressFill').style.width = pct + '%';
-    document.querySelector('[role="progressbar"]')?.setAttribute('aria-valuenow', pct);
+    // A barra de completude só existe no painel
+    const pctEl  = document.getElementById('progressPct');
+    const fillEl = document.getElementById('progressFill');
+    if (!pctEl || !fillEl) return;
+    pctEl.textContent  = pct + '%';
+    fillEl.style.width = pct + '%';
+    const barra = fillEl.closest('[role="progressbar"]');
+    barra?.setAttribute('aria-valuenow', pct);
+    barra?.setAttribute('aria-label', `${pct}% do perfil completo`);
 }
 
 function refreshProfileCardsUI() {
@@ -312,7 +324,7 @@ function refreshProfileCardsUI() {
     if (btnFoto) btnFoto.textContent = hasFoto ? 'Editar' : 'Adicionar';
 
     const btnCurriculo = document.getElementById('btnCurriculo');
-    if (btnCurriculo) btnCurriculo.textContent = hasCurriculo ? 'Atualizar' : 'Enviar';
+    if (btnCurriculo) btnCurriculo.textContent = hasCurriculo ? 'Ver análise' : 'Enviar';
 
     const btnHab = document.getElementById('btnHabilidades');
     if (btnHab) btnHab.textContent = hasHabilidades ? 'Editar' : 'Adicionar';
@@ -331,8 +343,6 @@ function bindProfileActions() {
     const btnFoto = document.getElementById('btnFotoPerfil');
     if (btnFoto) btnFoto.onclick = abrirModalFoto;
 
-    const btnCurriculo = document.getElementById('btnCurriculo');
-    if (btnCurriculo) btnCurriculo.onclick = abrirModalCurriculo;
 
     const btnHabilidades = document.getElementById('btnHabilidades');
     if (btnHabilidades) btnHabilidades.onclick = abrirModalHabilidades;
@@ -385,56 +395,6 @@ function abrirModalFoto() {
     if (dropApi && existingFoto && /^https?:\/\//i.test(existingFoto)) {
         dropApi.setLabel({ name: 'Foto atual mantida (sera substituida se enviar novo arquivo)' });
     }
-}
-
-function abrirModalCurriculo() {
-    showModal({
-        title: 'Curriculo',
-        bodyHtml: `
-            <div class="me-form-grid">
-                <label for="curriculoFileInput">Envie seu curriculo em PDF</label>
-                <div id="curriculoDropzone" class="me-dropzone" role="button" tabindex="0" aria-label="Escolher ou arrastar curriculo">
-                    <p>Escolher arquivo ou arraste o arquivo ate aqui</p>
-                    <input id="curriculoFileInput" type="file" accept="application/pdf">
-                </div>
-                <p id="curriculoFileLabel" class="me-helper">Nenhum arquivo selecionado</p>
-                <p class="me-helper">Se enviar PDF, a IA tenta extrair habilidades automaticamente.</p>
-            </div>
-        `,
-        onSave: async () => {
-            const fileInput = document.getElementById('curriculoFileInput');
-            const file = fileInput?.files?.[0];
-
-            if (!file) throw new Error('Selecione um curriculo em PDF para salvar.');
-
-            if (file && currentSession?.id) {
-                const fd = new FormData();
-                fd.append('estudanteId', currentSession.id);
-                fd.append('curriculo', file);
-                const res = await authFetch(`${API}/api/ia/analisar-curriculo`, { method: 'POST', body: fd });
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    throw new Error(err.erro || 'Nao foi possivel analisar o curriculo.');
-                }
-                // Usa a URL retornada pela API (o backend já salvou no banco, mas atualizamos o estado local)
-                const resultado = await res.json().catch(() => ({}));
-                if (resultado.curriculoUrl) {
-                    await saveStudentPatch({ curriculoUrl: resultado.curriculoUrl, temCurriculo: true });
-                    return; // já salvo com URL correta
-                }
-            }
-
-            await saveStudentPatch({ temCurriculo: true });
-            gerarScoresParaVagas(currentSession.id)
-                .then(r => carregarRecomendadoVagas(currentSession.id, r))
-                .catch(() => {});
-        }
-    });
-
-    attachDropzone('curriculoFileInput', 'curriculoDropzone', 'curriculoFileLabel', {
-        acceptPrefix: 'application/pdf',
-        maxSizeMb: 10
-    });
 }
 
 function abrirModalHabilidades() {
