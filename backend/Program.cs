@@ -21,22 +21,17 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Habilita CORS para o frontend conseguir acessar essa API depois
+// CORS: a API só responde ao frontend publicado no CloudFront.
+// (app.UseCors("PermitirFrontend") é chamado lá embaixo, depois do builder.Build())
+const string OrigemFrontend = "https://dq9hh10hw71hk.cloudfront.net";
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("PermitirFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(origin =>
-        {
-            if (string.IsNullOrWhiteSpace(origin))
-                return false;
-
-            return origin.Equals("https://opendoorsconexa.netlify.app", StringComparison.OrdinalIgnoreCase)
-                || origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase)
-                || origin.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase);
-        })
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        policy.WithOrigins(OrigemFrontend)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 
@@ -98,9 +93,6 @@ builder.Services.AddScoped<OpenDoors.Api.Services.GerarScoreService>();
 builder.Services.AddScoped<OpenDoors.Api.Services.GerarPerguntasMensaisService>();
 builder.Services.AddScoped<OpenDoors.Api.Services.AgenteCarreiraService>();
 
-builder.Services.AddHttpClient<OpenDoors.Api.Services.JoobleService>();
-builder.Services.AddScoped<OpenDoors.Api.Services.JoobleService>();
-
 builder.Services.AddScoped<OpenDoors.Api.Services.JwtService>();
 builder.Services.AddScoped<OpenDoors.Api.Services.LoginService>();
 builder.Services.AddSingleton<OpenDoors.Api.Services.GoogleAuthService>();
@@ -111,6 +103,37 @@ builder.Services.AddScoped<OpenDoors.Api.Services.EmailService>();
 // ============================================
 
 var app = builder.Build();
+
+// ============================================
+// MIGRATIONS AUTOMÁTICAS
+// ============================================
+// Ao iniciar, aplica as migrations pendentes (tabelas, triggers e procedures).
+// Se o banco indicado na connection string ainda não existir, o EF Core cria antes.
+// Assim o banco do RDS (privado, sem acesso de fora da AWS) é montado pela própria API.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        var pendentes = db.Database.GetPendingMigrations().ToList();
+        if (pendentes.Count > 0)
+        {
+            logger.LogInformation("Aplicando {Quantidade} migration(s): {Migrations}", pendentes.Count, string.Join(", ", pendentes));
+            db.Database.Migrate();
+            logger.LogInformation("Migrations aplicadas com sucesso.");
+        }
+        else
+        {
+            logger.LogInformation("Banco de dados já está atualizado.");
+        }
+    }
+    catch (Exception ex)
+    {
+        // Não derruba a API: o erro fica no log (web.stdout.log no Beanstalk) para diagnóstico
+        logger.LogError(ex, "Falha ao aplicar as migrations no banco de dados.");
+    }
+}
 
 // Em ambiente de desenvolvimento, mostra o Swagger
 if (app.Environment.IsDevelopment())
@@ -124,7 +147,7 @@ app.UseAuthentication();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseHttpsRedirection();
+    //app.UseHttpsRedirection();
 }
 
 app.UseAuthorization();

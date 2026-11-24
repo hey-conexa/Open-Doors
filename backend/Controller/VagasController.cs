@@ -28,9 +28,13 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
+                var empresasExemplo = await ObterEmpresasDeExemploAsync();
+
                 var resultado = await _dbContext.Vagas.ToListAsync();
 
-                var vagasDto = resultado.Select(MapearParaDto).ToList();
+                var vagasDto = OrdenarPorPrioridade(resultado, empresasExemplo)
+                    .Select(v => MapearParaDto(v, empresasExemplo))
+                    .ToList();
 
                 return Ok(vagasDto);
             }
@@ -49,11 +53,16 @@ namespace OpenDoors.Api.Controllers
         {
             try
             {
+                var empresasExemplo = await ObterEmpresasDeExemploAsync();
+
                 var resultado = await _dbContext.Vagas
                     .Where(v => v.Status == "aberta")
                     .ToListAsync();
 
-                var vagasDto = resultado.Select(MapearParaDto).ToList();
+                // Vagas de empresas cadastradas pelo site vêm primeiro
+                var vagasDto = OrdenarPorPrioridade(resultado, empresasExemplo)
+                    .Select(v => MapearParaDto(v, empresasExemplo))
+                    .ToList();
 
                 return Ok(vagasDto);
             }
@@ -280,6 +289,35 @@ namespace OpenDoors.Api.Controllers
         // ===========================================
         // MÉTODO PRIVADO — Converte Model em DTO
         // ===========================================
+        // ===========================================
+        // PRIORIDADE: vagas de empresas cadastradas pelo site
+        // ===========================================
+        // Empresas com criado_por_admin = true são as de exemplo (sem login).
+        // As vagas delas ficam depois das vagas das empresas que se cadastraram.
+        private async Task<HashSet<Guid>> ObterEmpresasDeExemploAsync()
+        {
+            var ids = await _dbContext.Empresas
+                .Where(e => e.CriadoPorAdmin == true)
+                .Select(e => e.Id)
+                .ToListAsync();
+
+            return ids.ToHashSet();
+        }
+
+        private static IEnumerable<Vaga> OrdenarPorPrioridade(IEnumerable<Vaga> vagas, HashSet<Guid> empresasExemplo)
+        {
+            return vagas
+                .OrderBy(v => empresasExemplo.Contains(v.EmpresaId)) // false (empresa cadastrada) primeiro
+                .ThenByDescending(v => v.CriadoEm);
+        }
+
+        private static VagaDto MapearParaDto(Vaga vaga, HashSet<Guid> empresasExemplo)
+        {
+            var dto = MapearParaDto(vaga);
+            dto.EmpresaCadastrada = !empresasExemplo.Contains(vaga.EmpresaId);
+            return dto;
+        }
+
         private static VagaDto MapearParaDto(Vaga vaga)
         {
             return new VagaDto
@@ -341,6 +379,14 @@ namespace OpenDoors.Api.Controllers
                          candidatos.Add((match, vaga));
                  }
 
+                 // Vagas de empresas cadastradas pelo site vêm antes das de exemplo;
+                 // dentro de cada grupo, maior score primeiro
+                 var empresasExemplo = await ObterEmpresasDeExemploAsync();
+                 candidatos = candidatos
+                     .OrderBy(c => empresasExemplo.Contains(c.vaga.EmpresaId))
+                     .ThenByDescending(c => c.match.ScoreTotal)
+                     .ToList();
+
                  var maxPorArea = 2;
                  var limiteFinal = 5;
                  var contagemArea = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -349,7 +395,8 @@ namespace OpenDoors.Api.Controllers
                  var porArea = candidatos
                      .GroupBy(c => string.IsNullOrWhiteSpace(c.vaga.Area) ? "Outras" : c.vaga.Area.Trim(), StringComparer.OrdinalIgnoreCase)
                      .Select(g => g.First())
-                     .OrderByDescending(c => c.match.ScoreTotal)
+                     .OrderBy(c => empresasExemplo.Contains(c.vaga.EmpresaId))
+                     .ThenByDescending(c => c.match.ScoreTotal)
                      .ToList();
 
                  foreach (var item in porArea)
@@ -404,6 +451,7 @@ namespace OpenDoors.Api.Controllers
                          Beneficios = item.vaga.Beneficios,
                          VagasDisponiveis = item.vaga.VagasDisponiveis,
                          Status = item.vaga.Status,
+                         EmpresaCadastrada = !empresasExemplo.Contains(item.vaga.EmpresaId),
                          // Score data
                          ScoreTotal = item.match.ScoreTotal,
                          ScoreCurriculo = item.match.ScoreCurriculo,
