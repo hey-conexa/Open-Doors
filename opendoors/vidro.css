@@ -1,0 +1,497 @@
+/* ==============================================================
+   VIDRO — "portas de vidro" do Open Doors
+   Um campo de luz nas cores da marca atrás de painéis de vidro fosco.
+   Usado nas telas de acesso (Acesso/*.html) e no topo da homepage.
+   Carregar DEPOIS do CSS da página.
+   ============================================================== */
+
+:root {
+  /* Material de vidro (claro) */
+  --vidro-fundo:   rgba(255, 255, 255, 0.42);
+  --vidro-borda:   rgba(255, 255, 255, 0.70);
+  --vidro-brilho:  inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --vidro-sombra:  0 24px 60px rgba(5, 90, 122, 0.18);
+  --vidro-desfoque: blur(22px) saturate(150%);
+
+  /* Superfícies dentro do vidro (campos, botões secundários) */
+  --vidro-campo:       rgba(255, 255, 255, 0.62);
+  --vidro-campo-foco:  rgba(255, 255, 255, 0.90);
+  --vidro-camada:      rgba(255, 255, 255, 0.38);
+  --vidro-opaco:       #f6f9fa; /* listas suspensas e opções: precisam ser legíveis */
+
+  /* Campo de luz: Água, Petróleo, Petróleo profundo e um ponto de Âmbar */
+  --luz-agua:      rgba(94, 200, 224, 0.85);
+  --luz-petroleo:  rgba(8, 124, 167, 0.62);
+  --luz-profundo:  rgba(5, 90, 122, 0.55);
+  --luz-ambar:     rgba(242, 200, 121, 0.80);
+}
+
+[data-theme="dark"] {
+  --vidro-fundo:   rgba(16, 28, 34, 0.55);
+  --vidro-borda:   rgba(255, 255, 255, 0.10);
+  --vidro-brilho:  inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --vidro-sombra:  0 24px 60px rgba(0, 0, 0, 0.45);
+
+  --vidro-campo:       rgba(8, 16, 20, 0.50);
+  --vidro-campo-foco:  rgba(8, 16, 20, 0.75);
+  --vidro-camada:      rgba(255, 255, 255, 0.05);
+  --vidro-opaco:       #172227;
+
+  --luz-agua:      rgba(94, 200, 224, 0.26);
+  --luz-petroleo:  rgba(8, 124, 167, 0.55);
+  --luz-profundo:  rgba(5, 90, 122, 0.60);
+  --luz-ambar:     rgba(242, 200, 121, 0.16);
+}
+
+/* --------------------------------------------------------------
+   CAMPO DE LUZ (o único movimento: deriva lenta)
+   -------------------------------------------------------------- */
+.page-layout {
+  position: relative;
+  isolation: isolate;
+}
+
+.page-layout::before {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  z-index: -1;
+  pointer-events: none;
+  /* Duas formas atravessam a área central (onde fica o vidro); as outras dão profundidade */
+  background:
+    radial-gradient(22% 30% at 76% 30%, var(--luz-petroleo) 0%, transparent 62%),
+    radial-gradient(26% 32% at 50% 72%, var(--luz-agua) 0%, transparent 64%),
+    radial-gradient(30% 34% at 96% 92%, var(--luz-profundo) 0%, transparent 66%),
+    radial-gradient(20% 24% at 18% 86%, var(--luz-ambar) 0%, transparent 62%),
+    radial-gradient(24% 28% at 10% 14%, var(--luz-agua) 0%, transparent 66%);
+  filter: blur(6px);
+  animation: luz-deriva 38s ease-in-out infinite alternate;
+}
+
+/* Nas telas de acesso o campo fica preso à janela enquanto o formulário rola */
+.page-layout::before { position: fixed; }
+
+@keyframes luz-deriva {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(3%, -2%, 0) scale(1.06); }
+  100% { transform: translate3d(-2%, 3%, 0) scale(1.02); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-layout::before { animation: none; }
+}
+
+/* --------------------------------------------------------------
+   TELAS DE ACESSO
+   -------------------------------------------------------------- */
+/* Só a navbar das telas de acesso (a da homepage tem outras cores) */
+.navbar:has(~ .page-layout) {
+  background: color-mix(in srgb, var(--navbar-bg) 55%, transparent);
+  -webkit-backdrop-filter: var(--vidro-desfoque);
+  backdrop-filter: var(--vidro-desfoque);
+}
+
+.main { background: transparent; }
+
+/* Painel lateral: vidro mais leve, para não competir com o formulário */
+.brand-panel {
+  background: var(--vidro-camada);
+  border-right: 1px solid var(--vidro-borda);
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+/* O formulário é a porta de vidro */
+.form-container {
+  background: var(--vidro-fundo);
+  border: 1px solid var(--vidro-borda);
+  box-shadow: var(--vidro-sombra), var(--vidro-brilho);
+  -webkit-backdrop-filter: var(--vidro-desfoque);
+  backdrop-filter: var(--vidro-desfoque);
+  padding: 32px;
+
+  /* Tudo que usa estas cores dentro do formulário fica translúcido */
+  --input-bg:       var(--vidro-campo);
+  --input-bg-focus: var(--vidro-campo-foco);
+  --surface:        var(--vidro-camada);
+  --surface-2:      var(--vidro-camada);
+}
+
+/* Listas suspensas e opções de select ficam opacas para serem legíveis */
+.form-container .search-dropdown,
+.form-container select option {
+  background: var(--vidro-opaco);
+}
+
+.stat {
+  background: var(--vidro-camada);
+  border-color: var(--vidro-borda);
+  box-shadow: var(--vidro-brilho);
+}
+
+@media (max-width: 480px) {
+  .form-container { padding: 22px 18px; }
+}
+
+/* --------------------------------------------------------------
+   TOPO DA HOMEPAGE — bolhas com fotos atrás de um painel de vidro
+   -------------------------------------------------------------- */
+.topo-site {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: calc(100svh - var(--nav-h));
+  padding: 0 clamp(16px, 6vw, 110px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.topo-site::before { content: none; } /* o fundo agora são as bolhas */
+
+.bolhas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  container-type: size; /* 1cqh = 1% da altura do topo */
+}
+
+/* Cada bolha: posição horizontal (x), altura inicial (y, em % do topo, sem unidade),
+   diâmetro (d) e tempo para atravessar o topo de baixo para cima (dur) */
+.bolha {
+  --d: 10vw;
+  --dur: 66s;
+  position: absolute;
+  left: var(--x);
+  top: 0;
+  transform: translate3d(0, calc(var(--y) * 1cqh), 0);
+  width: var(--d);
+  height: var(--d);
+  min-width: 64px;
+  min-height: 64px;
+  object-fit: cover;
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(5, 90, 122, 0.18);
+  /* Sobem sem parar: saem pelo topo e voltam por baixo do painel.
+     O atraso negativo faz cada uma começar exatamente na sua altura y. */
+  animation: bolha-sobe var(--dur) linear infinite;
+  animation-delay: calc(var(--dur) * (var(--y) - 110) / 150);
+  will-change: transform;
+}
+
+/* Em volta do painel (visíveis) */
+.bolha:nth-child(1)  { --x: -3%;  --y: 9;   --d: 16.5vw; --dur: 64s; }
+.bolha:nth-child(2)  { --x: 14%;  --y: 4;   --d: 9.5vw;  --dur: 72s; }
+.bolha:nth-child(3)  { --x: 24.5%; --y: 13; --d: 10.5vw; --dur: 58s; }
+.bolha:nth-child(4)  { --x: 36%;  --y: 6;   --d: 9vw;    --dur: 80s; }
+.bolha:nth-child(5)  { --x: 45.5%; --y: -6; --d: 16.5vw; --dur: 68s; }
+.bolha:nth-child(6)  { --x: 61%;  --y: 17;  --d: 15.5vw; --dur: 55s; }
+.bolha:nth-child(7)  { --x: 69%;  --y: -8;  --d: 16vw;   --dur: 76s; }
+.bolha:nth-child(8)  { --x: 84.5%; --y: 6;  --d: 15.5vw; --dur: 62s; }
+.bolha:nth-child(9)  { --x: -2.5%; --y: 41; --d: 10.5vw; --dur: 70s; }
+.bolha:nth-child(10) { --x: 2.5%; --y: 60;  --d: 10.5vw; --dur: 60s; }
+.bolha:nth-child(11) { --x: -4%;  --y: 77;  --d: 16vw;   --dur: 78s; }
+.bolha:nth-child(12) { --x: 86%;  --y: 38;  --d: 16vw;   --dur: 66s; }
+.bolha:nth-child(13) { --x: 95.5%; --y: 37; --d: 8.8vw;  --dur: 57s; }
+.bolha:nth-child(14) { --x: 92.5%; --y: 60; --d: 8.8vw;  --dur: 74s; }
+.bolha:nth-child(15) { --x: 87%;  --y: 74;  --d: 15vw;   --dur: 69s; }
+/* Atrás do painel (aparecem desfocadas pelo vidro) */
+.bolha:nth-child(16) { --x: 22%;  --y: 46;  --d: 12vw;   --dur: 63s; }
+.bolha:nth-child(17) { --x: 41%;  --y: 58;  --d: 14vw;   --dur: 71s; }
+.bolha:nth-child(18) { --x: 62%;  --y: 47;  --d: 11vw;   --dur: 59s; }
+.bolha:nth-child(19) { --x: 15%;  --y: 74;  --d: 13vw;   --dur: 77s; }
+.bolha:nth-child(20) { --x: 66%;  --y: 76;  --d: 12vw;   --dur: 65s; }
+
+/* De 110% (abaixo da base) até -40% (acima do topo) da altura do topo */
+@keyframes bolha-sobe {
+  from { transform: translate3d(0, 110cqh, 0); }
+  to   { transform: translate3d(0, -40cqh, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bolha { animation: none; }
+}
+
+/* O painel de vidro sobe da base, como uma porta de vidro */
+.topo-vidro {
+  position: relative;
+  width: min(1080px, 100%);
+  /* Ocupa os 75% de baixo do topo: a borda de cima fica a 25% da altura.
+     O nome fica no alto do painel; o espaço abaixo do slogan é para o pitch. */
+  min-height: calc((100svh - var(--nav-h)) * 0.75);
+  margin: 10vh auto 0;
+  padding: clamp(32px, 7vh, 72px) clamp(24px, 5vw, 72px);
+  border-radius: 32px 32px 0 0;
+  border: 1px solid var(--vidro-borda);
+  border-bottom: none;
+  background: var(--vidro-fundo);
+  box-shadow: var(--vidro-sombra), var(--vidro-brilho);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  backdrop-filter: blur(26px) saturate(150%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  text-align: center;
+  gap: clamp(10px, 2vh, 20px);
+}
+
+/* Fonte e peso vêm do mainstyle.css (Plus Jakarta Sans 400 em toda a homepage) */
+.topo-vidro .topo-nome {
+  font-size: clamp(3.2rem, 10vw, 8.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  margin: 0;
+  max-width: none;
+}
+
+.topo-slogan {
+  font-size: clamp(1.1rem, 2.4vw, 1.75rem);
+  line-height: 1.35;
+  color: var(--gray-700);
+  margin: 0;
+  max-width: 28ch;
+}
+
+/* Pitch: o que o Open Doors faz, logo abaixo do slogan */
+.topo-pitch {
+  margin-top: clamp(14px, 4vh, 40px);
+  max-width: 40rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.topo-pitch p { margin: 0; text-wrap: balance; } /* linhas de tamanho parecido, sem palavra sozinha */
+
+.topo-pitch__destaque {
+  font-size: clamp(1.1rem, 1.9vw, 1.4rem);
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.topo-pitch__texto {
+  font-size: clamp(0.95rem, 1.3vw, 1.05rem);
+  line-height: 1.65;
+  color: var(--gray-700);
+  max-width: 34rem;
+  margin-inline: auto !important;
+}
+
+[data-theme="dark"] .topo-vidro .topo-nome { color: #eef0f4; }
+[data-theme="dark"] .topo-slogan { color: #b4c0c8; }
+[data-theme="dark"] .topo-pitch__destaque { color: #eef0f4; }
+[data-theme="dark"] .topo-pitch__texto { color: #b4c0c8; }
+[data-theme="dark"] .bolha { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
+
+/* --------------------------------------------------------------
+   COMO FUNCIONA — 3 passos em vidro, estudantes x empresas e fechamento
+   -------------------------------------------------------------- */
+.como-funciona {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(56px, 8vw, 104px) clamp(20px, 5vw, 60px);
+}
+
+/* Campo de luz parado atrás dos passos, para o vidro aparecer */
+.como-funciona::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.55;
+  background:
+    radial-gradient(28% 40% at 12% 28%, var(--luz-agua) 0%, transparent 65%),
+    radial-gradient(26% 36% at 88% 22%, var(--luz-petroleo) 0%, transparent 65%),
+    radial-gradient(22% 30% at 52% 46%, var(--luz-ambar) 0%, transparent 62%);
+}
+
+.cf-container {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.cf-titulo {
+  text-align: center;
+  font-size: clamp(2rem, 4.6vw, 3.2rem);
+  line-height: 1.1;
+  color: var(--text);
+  margin: 0 0 clamp(28px, 4vw, 48px);
+}
+
+/* Passos: uma sequência de verdade, por isso numerados */
+.cf-passos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(14px, 2vw, 24px);
+}
+
+.cf-passo {
+  padding: clamp(22px, 2.6vw, 32px);
+  border-radius: 22px;
+  background: var(--vidro-fundo);
+  border: 1px solid var(--vidro-borda);
+  box-shadow: var(--vidro-sombra), var(--vidro-brilho);
+  -webkit-backdrop-filter: var(--vidro-desfoque);
+  backdrop-filter: var(--vidro-desfoque);
+}
+
+.cf-passo__num {
+  display: block;
+  font-size: clamp(2.4rem, 4vw, 3rem);
+  line-height: 1;
+  color: var(--blue);
+  margin-bottom: 14px;
+}
+
+.cf-passo h3 {
+  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+  line-height: 1.3;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.cf-passo p {
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--gray-700);
+  margin: 0;
+}
+
+/* Estudantes | Empresas, com a linha no meio */
+.cf-publicos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: clamp(56px, 8vw, 96px);
+  text-align: center;
+}
+
+.cf-publico { padding: 4px clamp(16px, 4vw, 48px); }
+.cf-publico + .cf-publico { border-left: 2px solid var(--text); }
+
+.cf-publico h3 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  line-height: 1.15;
+  color: var(--text);
+  margin: 0;
+}
+
+.cf-publico__lema {
+  font-size: clamp(1.05rem, 1.6vw, 1.2rem);
+  color: var(--blue);
+  margin: 10px 0 22px;
+}
+
+.cf-publico ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cf-publico li {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--gray-700);
+}
+
+.cf-fechamento {
+  text-align: center;
+  margin-top: clamp(56px, 8vw, 96px);
+}
+
+.cf-fechamento p { margin: 0; text-wrap: balance; }
+
+.cf-fechamento__frase {
+  font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+  color: var(--gray-700);
+}
+
+.cf-fechamento__convite {
+  margin-top: 14px !important;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  line-height: 1.2;
+  color: var(--text);
+}
+
+/* Convite final: botão que leva à tela de acesso (estudante ou empresa) */
+.cf-botao {
+  display: inline-block;
+  margin-top: 24px;
+  padding: 14px 34px;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 1.05rem;
+  text-decoration: none;
+  box-shadow: 0 10px 26px rgba(8, 124, 167, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.cf-botao:hover { background: var(--blue-dark); box-shadow: 0 12px 30px rgba(8, 124, 167, 0.42); }
+.cf-botao:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+
+[data-theme="dark"] .cf-titulo,
+[data-theme="dark"] .cf-passo h3,
+[data-theme="dark"] .cf-publico h3,
+[data-theme="dark"] .cf-fechamento__convite { color: #eef0f4; }
+[data-theme="dark"] .cf-passo p,
+[data-theme="dark"] .cf-publico li,
+[data-theme="dark"] .cf-fechamento__frase { color: #b4c0c8; }
+[data-theme="dark"] .cf-passo__num,
+[data-theme="dark"] .cf-publico__lema { color: #4fb8dc; }
+[data-theme="dark"] .cf-publico + .cf-publico { border-left-color: rgba(238, 240, 244, 0.35); }
+
+@media (max-width: 768px) {
+  .cf-passos { grid-template-columns: 1fr; }
+  .cf-publicos { grid-template-columns: 1fr; gap: 36px; }
+  .cf-publico + .cf-publico { border-left: none; border-top: 2px solid var(--text); padding-top: 36px; }
+  [data-theme="dark"] .cf-publico + .cf-publico { border-top-color: rgba(238, 240, 244, 0.35); }
+}
+
+@media (max-width: 768px) {
+  .topo-site { min-height: 66svh; padding: 0 12px; }
+  /* Ocupa os 68% de baixo do topo (66svh): a borda de cima fica a 32% da altura */
+  .topo-vidro { margin-top: 14vh; min-height: calc(66svh * 0.68); border-radius: 24px 24px 0 0; }
+  /* No celular: 8 bolhas acima do painel, 5 atrás dele; as das laterais somem */
+  .bolha:nth-child(n + 9):nth-child(-n + 15) { display: none; }
+  /* Fileiras acima do painel */
+  .bolha:nth-child(1)  { --x: -6%; --y: 2;  --d: 28vw; }
+  .bolha:nth-child(2)  { --x: 25%; --y: 1;  --d: 20vw; }
+  .bolha:nth-child(3)  { --x: 47%; --y: 7;  --d: 22vw; }
+  .bolha:nth-child(4)  { --x: 74%; --y: 0;  --d: 24vw; }
+  .bolha:nth-child(5)  { --x: 84%; --y: 19; --d: 22vw; }
+  .bolha:nth-child(6)  { --x: 3%;  --y: 20; --d: 20vw; }
+  .bolha:nth-child(7)  { --x: 59%; --y: 23; --d: 19vw; }
+  .bolha:nth-child(8)  { --x: 31%; --y: 21; --d: 20vw; }
+  .bolha:nth-child(16) { --x: -5%; --y: 37; --d: 24vw; }
+  .bolha:nth-child(17) { --x: 35%; --y: 36; --d: 26vw; }
+  .bolha:nth-child(18) { --x: 73%; --y: 39; --d: 23vw; }
+  /* Atrás do painel */
+  .bolha:nth-child(19) { --x: 12%; --y: 66; --d: 26vw; }
+  .bolha:nth-child(20) { --x: 58%; --y: 72; --d: 30vw; }
+}
+
+/* --------------------------------------------------------------
+   SEM SUPORTE A DESFOQUE: volta às superfícies opacas
+   -------------------------------------------------------------- */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --vidro-fundo:  rgba(241, 244, 243, 0.94);
+    --vidro-camada: rgba(231, 238, 236, 0.92);
+    --vidro-campo:  #fff;
+  }
+  [data-theme="dark"] {
+    --vidro-fundo:  rgba(23, 34, 39, 0.96);
+    --vidro-camada: rgba(30, 43, 49, 0.94);
+    --vidro-campo:  #1a262c;
+  }
+}
