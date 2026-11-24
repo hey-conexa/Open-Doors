@@ -25,6 +25,13 @@ function showScreen(id) {
   if (el) el.classList.add('active');
 }
 
+// Link com #cadastro (ex.: botão "Criar minha conta" da homepage) abre direto no cadastro
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.location.hash !== '#cadastro') return;
+  if (typeof switchTab === 'function') switchTab('register'); // tela de empresa (abas)
+  else showScreen('screen-register');                         // tela de estudante
+});
+
 // MÁSCARAS 
 function maskPhone(el) {
   let v = el.value.replace(/\D/g, '').slice(0, 11);

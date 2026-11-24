@@ -1,0 +1,146 @@
+/* Tela única de acesso: escolha entre Estudante e Empresa.
+   Carregar depois de acesso.css e vidro.css. */
+
+.escolha {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px 72px;
+  overflow-x: clip; /* o cartão que sai pela lateral não cria barra de rolagem */
+}
+
+.escolha-titulo {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1.15;
+  color: var(--text);
+  text-align: center;
+}
+
+.escolha-sub {
+  margin-top: 10px;
+  font-size: 1rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.escolha-opcoes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  width: 100%;
+  max-width: 860px;
+  margin-top: 40px;
+}
+
+/* Cada opção é um painel de vidro inteiro clicável */
+.escolha-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 300px;
+  padding: 36px 32px 32px;
+  border-radius: 24px;
+  background: var(--vidro-fundo);
+  border: 1px solid var(--vidro-borda);
+  box-shadow: var(--vidro-sombra), var(--vidro-brilho);
+  -webkit-backdrop-filter: var(--vidro-desfoque);
+  backdrop-filter: var(--vidro-desfoque);
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    transform 0.45s cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 0.35s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.escolha-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--blue);
+}
+
+.escolha-card:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 4px;
+  border-radius: 24px;
+}
+
+.escolha-card__rotulo {
+  width: fit-content;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--accent-dim);
+  color: var(--blue);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
+.escolha-card__titulo {
+  font-size: clamp(1.4rem, 2.6vw, 1.75rem);
+  line-height: 1.2;
+  color: var(--text);
+}
+.escolha-card__titulo em { font-style: normal; color: var(--blue); }
+
+.escolha-card__texto {
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.escolha-card__acao {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin-top: auto;
+  padding: 11px 22px;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 0.95rem;
+  box-shadow: 0 10px 26px rgba(8, 124, 167, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: background 0.2s ease;
+}
+.escolha-card__acao svg { width: 16px; height: 16px; transition: transform 0.2s ease; }
+.escolha-card:hover .escolha-card__acao { background: var(--blue-dark); }
+.escolha-card:hover .escolha-card__acao svg { transform: translateX(3px); }
+
+[data-theme="dark"] .escolha-card__titulo em,
+[data-theme="dark"] .escolha-card__rotulo { color: #4fb8dc; }
+
+/* --------------------------------------------------------------
+   Depois da escolha: o outro perfil desliza para fora
+   e o escolhido vai para o centro
+   -------------------------------------------------------------- */
+.escolha-opcoes.escolhido .escolha-card { pointer-events: none; }
+
+.escolha-opcoes[data-escolha="estudante"] [data-perfil="empresa"] {
+  transform: translateX(120%);
+  opacity: 0;
+}
+.escolha-opcoes[data-escolha="empresa"] [data-perfil="estudante"] {
+  transform: translateX(-120%);
+  opacity: 0;
+}
+.escolha-opcoes[data-escolha="estudante"] [data-perfil="estudante"] {
+  transform: translateX(calc(50% + 12px));
+  border-color: var(--blue);
+}
+.escolha-opcoes[data-escolha="empresa"] [data-perfil="empresa"] {
+  transform: translateX(calc(-50% - 12px));
+  border-color: var(--blue);
+}
+
+/* Celular: um cartão embaixo do outro */
+@media (max-width: 720px) {
+  .escolha { justify-content: flex-start; padding-top: 36px; }
+  .escolha-opcoes { grid-template-columns: 1fr; gap: 16px; margin-top: 28px; }
+  .escolha-card { min-height: 0; padding: 26px 22px; }
+
+  /* Empilhados, o escolhido fica no lugar e o outro sai pela lateral */
+  .escolha-opcoes[data-escolha="estudante"] [data-perfil="estudante"],
+  .escolha-opcoes[data-escolha="empresa"] [data-perfil="empresa"] { transform: none; }
+}
