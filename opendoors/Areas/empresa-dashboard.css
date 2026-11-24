@@ -1,0 +1,305 @@
+/* ==============================================================
+   Painel de dados da empresa (estilo BI)
+   Cartões de vidro (mesmo material do vidro-areas.css) e gráficos.
+   Carregar depois de menu-empresa.css, ../vidro.css e vidro-areas.css.
+
+   Cores dos dados:
+   - série única: azul da marca
+   - funil (rampa ordinal de 4 passos da mesma cor), validada
+     contra a superfície de vidro clara (#e2eff4) e escura (#17262d)
+   ============================================================== */
+
+.dash {
+    --dash-serie:   #087CA7;
+    --dash-funil-1: #5aa9c6;
+    --dash-funil-2: #2b90b8;
+    --dash-funil-3: #0a6f95;
+    --dash-funil-4: #05506c;
+    --dash-trilho:  rgba(8, 124, 167, 0.10);
+    --dash-grade:   rgba(22, 49, 61, 0.10);
+    --dash-base:    rgba(22, 49, 61, 0.30);
+    --dash-texto:   var(--text);
+    --dash-texto-2: #3a4a56;
+    --dash-mudo:    #56666f;
+    --dash-sobe:    #006300;
+    --dash-desce:   #b42318;
+    --dash-faixa:   rgba(8, 124, 167, 0.07);
+}
+
+[data-theme="dark"] .dash {
+    --dash-serie:   #4fb8dc;
+    --dash-funil-1: #0f6f93;
+    --dash-funil-2: #1f95c0;
+    --dash-funil-3: #4fb8dc;
+    --dash-funil-4: #9bd6ea;
+    --dash-trilho:  rgba(79, 184, 220, 0.10);
+    --dash-grade:   rgba(255, 255, 255, 0.08);
+    --dash-base:    rgba(255, 255, 255, 0.24);
+    --dash-texto:   #eef0f4;
+    --dash-texto-2: #b4c0c8;
+    --dash-mudo:    #8fa0aa;
+    --dash-sobe:    #4ade80;
+    --dash-desce:   #f87171;
+    --dash-faixa:   rgba(79, 184, 220, 0.08);
+}
+
+/* O painel pede mais largura que a lista de vagas */
+.em-layout { max-width: 1240px; }
+
+.sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.dash { display: flex; flex-direction: column; gap: 16px; }
+
+/* Enquanto recarrega, mantém o desenho anterior mais apagado (sem pular o layout) */
+.dash--carregando .dash-kpis,
+.dash--carregando .dash-grade { opacity: 0.55; transition: opacity 0.2s ease; }
+
+/* ---------- Topo e filtros ---------- */
+.dash-topo {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+}
+.dash-titulo {
+    font-family: "Oswald", sans-serif !important;
+    font-size: clamp(1.3rem, 3vw, 1.6rem);
+    color: var(--dash-texto);
+    line-height: 1.2;
+}
+.dash-atualizado { margin-top: 2px; font-size: 0.82rem; color: var(--dash-mudo); }
+
+.dash-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.dash-periodo {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--vidro-camada);
+    border: 1px solid var(--vidro-borda);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+}
+.dash-periodo button {
+    border: 0;
+    background: transparent;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--dash-texto-2);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.dash-periodo button:hover { background: var(--dash-faixa); color: var(--dash-texto); }
+.dash-periodo button[aria-pressed="true"] { background: var(--blue); color: #fff; }
+.dash-periodo button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.dash-select select {
+    appearance: none;
+    min-width: 220px;
+    max-width: 100%;
+    padding: 8px 36px 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--vidro-borda);
+    background: var(--vidro-campo)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2356666f' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")
+        no-repeat right 14px center;
+    color: var(--dash-texto);
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+.dash-select select:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.dash-select option { background: var(--vidro-opaco); color: var(--dash-texto); }
+
+/* ---------- Cartões ---------- */
+.dash-card {
+    min-width: 0;
+    padding: 18px 20px;
+    border-radius: var(--radius-md);
+    background: var(--vidro-fundo);
+    border: 1px solid var(--vidro-borda);
+    box-shadow: var(--vidro-sombra), var(--vidro-brilho);
+    -webkit-backdrop-filter: var(--vidro-desfoque);
+    backdrop-filter: var(--vidro-desfoque);
+}
+.dash-card header { margin-bottom: 14px; }
+.dash-card h3 { font-size: 0.98rem; color: var(--dash-texto); }
+.dash-card__sub { margin-top: 2px; font-size: 0.8rem; color: var(--dash-mudo); }
+
+/* ---------- Indicadores ---------- */
+.dash-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+.dash-kpi { display: flex; flex-direction: column; gap: 4px; }
+.dash-kpi__rotulo { font-size: 0.82rem; color: var(--dash-texto-2); }
+.dash-kpi__valor {
+    font-size: 2rem;
+    line-height: 1.1;
+    color: var(--dash-texto);
+    font-weight: 600 !important;
+}
+.dash-kpi__valor--heroi { font-size: 3rem; }
+.dash-kpi__sub,
+.dash-kpi__delta { font-size: 0.8rem; color: var(--dash-mudo); }
+.dash-kpi__delta--sobe  { color: var(--dash-sobe); }
+.dash-kpi__delta--desce { color: var(--dash-desce); }
+
+/* ---------- Grade de gráficos ---------- */
+.dash-grade {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+.dash-card--largo { grid-column: span 2; }
+#cardHabilidades { grid-column: 1 / -1; }
+
+.dash-grafico { min-height: 120px; }
+.dash-vazio {
+    display: grid;
+    place-items: center;
+    min-height: 140px;
+    text-align: center;
+    font-size: 0.88rem;
+    color: var(--dash-mudo);
+}
+
+/* Colunas (SVG) */
+.dash-grafico svg { display: block; width: 100%; height: auto; overflow: visible; }
+.dash-marca { fill: var(--dash-serie); }
+svg .dash-linha { stroke: var(--dash-grade); stroke-width: 1; }
+svg .dash-base  { stroke: var(--dash-base); stroke-width: 1; }
+svg .dash-eixo  {
+    fill: var(--dash-mudo);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+svg .dash-hit { fill: transparent; cursor: default; outline: none; }
+svg .dash-hit:hover,
+svg .dash-hit:focus-visible { fill: var(--dash-faixa); }
+svg .dash-hit:focus-visible { stroke: var(--blue); stroke-width: 1.5; }
+
+/* Barras horizontais (HTML) */
+.dash-barras { display: flex; flex-direction: column; gap: 6px; }
+.dash-barra {
+    display: grid;
+    grid-template-columns: minmax(90px, 38%) 1fr 48px;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 6px;
+    border-radius: 8px;
+    outline: none;
+}
+.dash-barra:hover,
+.dash-barra:focus-visible { background: var(--dash-faixa); }
+.dash-barra:focus-visible { box-shadow: inset 0 0 0 1.5px var(--blue); }
+
+.dash-barra__rotulo {
+    font-size: 0.84rem;
+    color: var(--dash-texto-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dash-barra__trilho {
+    position: relative;
+    height: 14px;
+    border-radius: 0 4px 4px 0;
+    background: var(--dash-trilho);
+}
+.dash-barra__fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 0 4px 4px 0;   /* ponta arredondada, base reta */
+    background: var(--dash-serie);
+    transition: width 0.35s ease;
+}
+.dash-barra__valor {
+    font-size: 0.84rem;
+    color: var(--dash-texto);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.dash-funil-1 { background: var(--dash-funil-1); }
+.dash-funil-2 { background: var(--dash-funil-2); }
+.dash-funil-3 { background: var(--dash-funil-3); }
+.dash-funil-4 { background: var(--dash-funil-4); }
+
+/* Tabela de dados */
+.dash-tabela { margin-top: 12px; font-size: 0.82rem; }
+.dash-tabela summary {
+    width: fit-content;
+    cursor: pointer;
+    color: var(--dash-mudo);
+}
+.dash-tabela summary:hover { color: var(--blue); }
+.dash-tabela table {
+    width: 100%;
+    margin-top: 8px;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+.dash-tabela th,
+.dash-tabela td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--dash-grade);
+    color: var(--dash-texto-2);
+}
+.dash-tabela th { color: var(--dash-texto); font-weight: 600 !important; }
+
+/* Tooltip: valor em destaque, rótulo depois */
+.dash-dica {
+    position: absolute;
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-width: 260px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--vidro-opaco) 94%, transparent);
+    border: 1px solid var(--vidro-borda);
+    box-shadow: 0 10px 28px rgba(5, 40, 55, 0.22);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    pointer-events: none;
+}
+.dash-dica[hidden] { display: none; }
+.dash-dica strong { font-size: 1rem; color: var(--text); }
+.dash-dica span   { font-size: 0.8rem; color: #3a4a56; }
+.dash-dica small  { font-size: 0.75rem; color: #56666f; }
+[data-theme="dark"] .dash-dica strong { color: #eef0f4; }
+[data-theme="dark"] .dash-dica span   { color: #b4c0c8; }
+[data-theme="dark"] .dash-dica small  { color: #8fa0aa; }
+
+/* ---------- Telas menores ---------- */
+@media (max-width: 1000px) {
+    .dash-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dash-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dash-card--largo { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+    .dash-grade { grid-template-columns: 1fr; }
+    .dash-kpi__valor--heroi { font-size: 2.4rem; }
+    .dash-topo { align-items: flex-start; }
+    .dash-select, .dash-select select { width: 100%; }
+}
+
+/* Habilidades: o valor mostra também a base (ex.: 57% · 8/14) */
+.dash-barras--base .dash-barra { grid-template-columns: minmax(90px, 30%) 1fr 96px; }

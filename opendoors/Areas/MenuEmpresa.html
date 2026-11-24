@@ -11,10 +11,14 @@
   <link rel="stylesheet" href="../mainstyle.css">
   <link rel="stylesheet" href="../maindark.css">
   <link rel="stylesheet" href="menu-empresa.css">
+  <link rel="stylesheet" href="../vidro.css?v=2026-11-23b">
+  <link rel="stylesheet" href="vidro-areas.css?v=2026-11-23b">
+  <link rel="stylesheet" href="empresa-dashboard.css?v=2026-11-23b">
   <link rel="stylesheet" href="../acessibilidade.css">
   <script src="../api-client.js"></script>
   <script src="../maintheme.js" defer></script>
   <script src="../acessibilidade.js" defer></script>
+  <script src="empresa-dashboard.js?v=2026-11-23b" defer></script>
 </head>
 <body>
 
@@ -94,10 +98,6 @@
           <span class="em-stat__label">Vagas ativas</span>
         </div>
         <div class="em-stat" role="listitem">
-          <span class="em-stat__value" id="statCandidaturas">—</span>
-          <span class="em-stat__label">Candidaturas recebidas</span>
-        </div>
-        <div class="em-stat" role="listitem">
           <span class="em-stat__value" id="statContratacoes">—</span>
           <span class="em-stat__label">Total contratações</span>
         </div>
@@ -106,6 +106,94 @@
 
     <!-- CONTEÚDO -->
     <div class="em-content">
+
+      <!-- PAINEL DE DADOS (empresa-dashboard.js) -->
+      <section class="dash" id="dashboard" aria-labelledby="dash-title">
+        <div class="dash-topo">
+          <div>
+            <h2 id="dash-title" class="dash-titulo">Painel de dados</h2>
+            <p class="dash-atualizado" id="dashAtualizado" role="status">Carregando…</p>
+          </div>
+          <button type="button" class="em-btn em-btn--ghost em-btn--sm" id="dashAtualizar">Atualizar</button>
+        </div>
+
+        <!-- Filtros: valem para todos os indicadores e gráficos abaixo -->
+        <div class="dash-filtros" role="group" aria-label="Filtros do painel">
+          <div class="dash-periodo" role="group" aria-label="Período">
+            <button type="button" data-periodo="7" aria-pressed="false">7 dias</button>
+            <button type="button" data-periodo="30" aria-pressed="true">30 dias</button>
+            <button type="button" data-periodo="90" aria-pressed="false">90 dias</button>
+            <button type="button" data-periodo="tudo" aria-pressed="false">Tudo</button>
+          </div>
+          <label class="dash-select">
+            <span class="sr-only">Vaga</span>
+            <select id="dashFiltroVaga"><option value="todas">Todas as vagas</option></select>
+          </label>
+        </div>
+
+        <!-- Indicadores -->
+        <div class="dash-kpis">
+          <div class="dash-kpi dash-card">
+            <span class="dash-kpi__rotulo">Candidaturas recebidas</span>
+            <strong class="dash-kpi__valor dash-kpi__valor--heroi" id="kpiCandidaturas">—</strong>
+            <span class="dash-kpi__delta" id="kpiCandidaturasDelta"></span>
+          </div>
+          <div class="dash-kpi dash-card">
+            <span class="dash-kpi__rotulo">Compatibilidade média</span>
+            <strong class="dash-kpi__valor" id="kpiScore">—</strong>
+            <span class="dash-kpi__sub" id="kpiScoreSub"></span>
+          </div>
+          <div class="dash-kpi dash-card">
+            <span class="dash-kpi__rotulo">Taxa de entrevista</span>
+            <strong class="dash-kpi__valor" id="kpiEntrevista">—</strong>
+            <span class="dash-kpi__sub" id="kpiEntrevistaSub"></span>
+          </div>
+          <div class="dash-kpi dash-card">
+            <span class="dash-kpi__rotulo">Aprovadas</span>
+            <strong class="dash-kpi__valor" id="kpiAprovadas">—</strong>
+            <span class="dash-kpi__sub" id="kpiAprovadasSub"></span>
+          </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="dash-grade">
+          <article class="dash-card dash-card--largo" id="cardTempo">
+            <header><h3>Candidaturas ao longo do tempo</h3><p class="dash-card__sub">Por dia</p></header>
+            <div class="dash-grafico"></div>
+            <details class="dash-tabela" hidden><summary>Ver dados em tabela</summary></details>
+          </article>
+
+          <article class="dash-card" id="cardFunil">
+            <header><h3>Funil de seleção</h3><p class="dash-card__sub">Quantas candidaturas chegaram a cada etapa</p></header>
+            <div class="dash-grafico"></div>
+            <details class="dash-tabela" hidden><summary>Ver dados em tabela</summary></details>
+          </article>
+
+          <article class="dash-card" id="cardDistribuicao">
+            <header><h3>Distribuição da compatibilidade</h3><p class="dash-card__sub">Candidatos por faixa de score da IA</p></header>
+            <div class="dash-grafico"></div>
+            <details class="dash-tabela" hidden><summary>Ver dados em tabela</summary></details>
+          </article>
+
+          <article class="dash-card" id="cardComposicao">
+            <header><h3>De onde vem a compatibilidade</h3><p class="dash-card__sub">Média de cada parte do score</p></header>
+            <div class="dash-grafico"></div>
+            <details class="dash-tabela" hidden><summary>Ver dados em tabela</summary></details>
+          </article>
+
+          <article class="dash-card" id="cardPorVaga">
+            <header><h3>Candidaturas por vaga</h3><p class="dash-card__sub">Vagas com mais procura no período</p></header>
+            <div class="dash-grafico"></div>
+            <details class="dash-tabela" hidden><summary>Ver dados em tabela</summary></details>
+          </article>
+
+          <article class="dash-card dash-card--largo" id="cardHabilidades">
+            <header><h3>Habilidades exigidas entre os candidatos</h3><p class="dash-card__sub">% dos candidatos de cada vaga que têm a habilidade no perfil — as mais baixas são as mais difíceis de encontrar</p></header>
+            <div class="dash-grafico"></div>
+            <details class="dash-tabela" hidden><summary>Ver dados em tabela</summary></details>
+          </article>
+        </div>
+      </section>
 
       <!-- MINHAS VAGAS -->
       <section class="em-section" aria-labelledby="vagas-title">
@@ -152,6 +240,6 @@
     </div>
   </div>
 
-  <script src="menu-empresa.js"></script>
+  <script src="menu-empresa.js?v=2026-11-23"></script>
 </body>
 </html>

@@ -105,13 +105,14 @@ async function carregarVagas(empresaId) {
     }
 }
 
+// Guarda o total atual de candidaturas: é o ponto de partida do aviso de "novas candidaturas"
+// (o número em si aparece no Painel de dados)
 async function atualizarStatCandidaturas(empresaId) {
     try {
         const res = await authFetch(`${API}/api/candidaturas/empresa/${empresaId}`);
         if (!res.ok) return;
         const candidaturas = await res.json();
-        const el = document.getElementById('statCandidaturas');
-        if (el) el.textContent = candidaturas.length;
+        _ultimoTotalCand = candidaturas.length;
     } catch (e) { /* silencioso */ }
 }
 
@@ -186,6 +187,7 @@ async function fecharVaga(vagaId) {
         });
         if (!res.ok) throw new Error();
         await carregarVagas(currentSession.id);
+        window.atualizarDashboard?.(); // painel de dados acompanha a mudança
     } catch {
         alert('Erro ao encerrar a vaga. Tente novamente.');
     }
@@ -200,6 +202,7 @@ async function reabrirVaga(vagaId) {
         });
         if (!res.ok) throw new Error();
         await carregarVagas(currentSession.id);
+        window.atualizarDashboard?.(); // painel de dados acompanha a mudança
     } catch {
         alert('Erro ao reabrir a vaga. Tente novamente.');
     }
@@ -218,8 +221,6 @@ async function carregarCandidaturasEmpresa(empresaId) {
         const candidaturas = await res.json();
 
         Array.from(lista.querySelectorAll('.em-candidatura')).forEach(el => el.remove());
-
-        document.getElementById('statCandidaturas').textContent = candidaturas.length;
 
         if (!candidaturas.length) {
             if (empty) empty.style.display = '';
@@ -317,6 +318,7 @@ async function atualizarStatusCandidatura(candidaturaId, novoStatus) {
         });
         if (!res.ok) throw new Error();
         await carregarCandidaturasEmpresa(currentSession.id);
+        window.atualizarDashboard?.(); // painel de dados acompanha a mudança
     } catch {
         alert('Erro ao atualizar status. Tente novamente.');
     }
@@ -802,6 +804,7 @@ async function salvarVaga(vagaId) {
 
         fecharModal();
         await carregarVagas(currentSession.id);
+        window.atualizarDashboard?.(); // painel de dados acompanha a mudança
 
     } catch (e) {
         errEl.textContent = e.message || 'Erro ao salvar a vaga.';
@@ -921,13 +924,10 @@ function iniciarPolling(empresaId) {
             const candidaturas = await res.json();
             const total = candidaturas.length;
 
-            // Atualiza stat geral
-            const statEl = document.getElementById('statCandidaturas');
-            if (statEl) statEl.textContent = total;
-
             if (total > _ultimoTotalCand) {
                 const novas = total - _ultimoTotalCand;
                 _ultimoTotalCand = total;
+                window.atualizarDashboard?.(); // novas candidaturas entram no painel de dados
 
                 // Atualiza badges de cada vaga
                 await carregarVagas(empresaId);
@@ -961,9 +961,7 @@ function mostrarNotificacaoCandidatura(qtd) {
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (currentSession?.id) {
-            // Salva contagem atual antes de começar a vigiar
-            const statEl = document.getElementById('statCandidaturas');
-            _ultimoTotalCand = parseInt(statEl?.textContent || '0', 10);
+            // _ultimoTotalCand já foi preenchido por atualizarStatCandidaturas() na abertura
             iniciarPolling(currentSession.id);
         }
     }, 5_000);
