@@ -664,7 +664,10 @@ async function gerarScoresParaVagas(estudanteId) {
             }
         }
 
-        recomendacoes.sort((a, b) => (b.scoreTotal || 0) - (a.scoreTotal || 0));
+        // Vagas de empresas cadastradas pelo site primeiro; depois, maior score
+        recomendacoes.sort((a, b) =>
+            (b.empresaCadastrada === true) - (a.empresaCadastrada === true)
+            || (b.scoreTotal || 0) - (a.scoreTotal || 0));
         return recomendacoes.slice(0, 5);
     } catch (err) {
         console.warn('Falha ao preparar recomendacoes de vagas:', err);
@@ -1230,6 +1233,60 @@ function formatarDataRelativa(isoDate) {
 
 // ─── VER TODAS AS VAGAS ──────────────────────────────────────────────────────
 
+// Selo de compatibilidade (score de 0 a 100) mostrado em cada vaga
+function renderScoreBadge(el, score) {
+    if (!el) return;
+    if (score === null || score === undefined || isNaN(Number(score))) {
+        el.textContent = 'Compatibilidade indisponível';
+        el.style.cssText = 'font-size:0.72rem;color:var(--gray-400);';
+        el.title = '';
+        return;
+    }
+    const pct = Math.round(Number(score));
+    const cor = pct >= 70 ? 'var(--success, #16a34a)'
+              : pct >= 40 ? 'var(--warning, #d97706)'
+              : 'var(--error, #dc2626)';
+    el.textContent = `${pct}% compatível`;
+    el.title = 'Score de compatibilidade entre o seu perfil e a vaga';
+    el.style.cssText = `font-size:0.72rem;font-weight:600;color:${cor};
+        border:1px solid ${cor};border-radius:999px;padding:2px 8px;white-space:nowrap;`;
+}
+
+// Busca os scores já calculados do estudante: Map(vagaId → scoreTotal)
+async function buscarScoresExistentes(estudanteId) {
+    const mapa = new Map();
+    try {
+        const r = await authFetch(`${API}/api/matches/estudante/${estudanteId}`);
+        if (r.ok) {
+            const matches = await r.json();
+            matches.forEach(m => mapa.set(String(m.vagaId), m.scoreTotal));
+        }
+    } catch (_) {}
+    return mapa;
+}
+
+// Calcula (e salva no banco) o score das vagas que ainda não têm,
+// poucas por vez para não sobrecarregar a IA
+async function calcularScoresFaltantes(estudanteId, vagasSemScore, aoCalcular, deveParar = () => false, simultaneas = 2) {
+    const fila = [...vagasSemScore];
+    async function trabalhador() {
+        while (fila.length && !deveParar()) {
+            const vaga = fila.shift();
+            let score = null;
+            try {
+                const r = await authFetch(`${API}/api/ia/gerar-score`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ estudanteId, vagaId: vaga.id })
+                });
+                if (r.ok) score = (await r.json()).scoreTotal;
+            } catch (_) {}
+            aoCalcular(vaga, score);
+        }
+    }
+    await Promise.all(Array.from({ length: simultaneas }, trabalhador));
+}
+
 async function verTodasVagas() {
     // Busca candidaturas já feitas para marcar botões corretamente
     let jaCandidata = new Set();
@@ -1250,9 +1307,14 @@ async function verTodasVagas() {
     });
 
     try {
-        const res = await authFetch(`${API}/api/vagas/abertas`);
+        const estudanteId = currentSession?.id;
+        const [res, scores] = await Promise.all([
+            authFetch(`${API}/api/vagas/abertas`),
+            estudanteId ? buscarScoresExistentes(estudanteId) : Promise.resolve(new Map())
+        ]);
         if (!res.ok) throw new Error();
         const vagas = await res.json();
+        const badges = new Map(); // vagaId → elemento do selo
 
         const container = document.getElementById('todasVagasLista');
         if (!container) return;
@@ -1285,6 +1347,8 @@ async function verTodasVagas() {
                     <div>
                         <div style="font-weight:600;font-size:0.95rem">${vaga.titulo}</div>
                         <div style="font-size:0.78rem;color:var(--gray-400);margin-top:2px">${vaga.empresaId || ''}</div>
+                        <div style="margin-top:6px"><span data-score-vaga="${vaga.id}"
+                             style="font-size:0.72rem;color:var(--gray-400)">Calculando compatibilidade…</span></div>
                     </div>
                     <button class="me-btn ${jaCandidatou ? 'me-btn--secondary' : 'me-btn--primary'} me-btn--sm"
                             style="flex-shrink:0;font-size:0.78rem;padding:5px 12px"
@@ -1307,8 +1371,24 @@ async function verTodasVagas() {
                 jaCandidata.add(String(vaga.id));
             });
 
+            // Selo de compatibilidade: usa o score salvo, se existir
+            const badge = card.querySelector('[data-score-vaga]');
+            badges.set(String(vaga.id), badge);
+            if (scores.has(String(vaga.id))) renderScoreBadge(badge, scores.get(String(vaga.id)));
+
             container.appendChild(card);
         });
+
+        // Calcula em segundo plano o score das vagas que ainda não têm
+        const semScore = vagas.filter(v => v?.id && !scores.has(String(v.id)));
+        if (estudanteId && semScore.length) {
+            calcularScoresFaltantes(estudanteId, semScore, (vaga, score) => {
+                const badge = badges.get(String(vaga.id));
+                if (badge?.isConnected) renderScoreBadge(badge, score);
+            }, () => !container.isConnected); // para se o modal for fechado
+        } else if (!estudanteId) {
+            semScore.forEach(v => renderScoreBadge(badges.get(String(v.id)), null));
+        }
 
     } catch (_) {
         const container = document.getElementById('todasVagasLista');
