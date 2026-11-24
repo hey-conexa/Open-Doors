@@ -112,7 +112,12 @@ section,
     align-items: center;
     text-decoration: none;
     flex-shrink: 0;
+    /* A imagem do logo (160px, com muita margem transparente) passa da navbar.
+       O clique fica só na altura da navbar; o que sobra da imagem deixa o clique
+       passar para o que está embaixo (ex.: as abas da área do estudante). */
+    height: var(--nav-h);
 }
+.logo-link .logo-img { pointer-events: none; }
 
 .logo-img {
     height: 160px;

@@ -16,10 +16,20 @@ function clearSession() {
 }
 
 // LOGOUT 
-function logoutStudent() {
+// Sai da conta (apaga também o token de login) e volta para a tela inicial
+function sairParaTelaInicial() {
+  try {
+    localStorage.removeItem('od-auth');   // token JWT (mesma chave do api-client.js)
+  } catch (e) {}
   clearSession();
   closeProfileDrawer();
-  renderProfileBtn();
+  // Páginas dentro de Areas/ e Acesso/ estão uma pasta abaixo da homepage
+  const naSubpasta = /\/(Areas|Acesso)\//.test(window.location.pathname);
+  window.location.href = naSubpasta ? '../OpenDoors.html' : 'OpenDoors.html';
+}
+
+function logoutStudent() {
+  sairParaTelaInicial();
 }
 
 // ABRIR / FECHAR GAVETA 
@@ -130,9 +140,7 @@ function renderProfileBtn() {
 }
 
 function logoutCompany() {
-  clearSession();
-  closeProfileDrawer();
-  renderProfileBtn();
+  sairParaTelaInicial();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -34,5 +34,8 @@ namespace OpenDoors.Api.DTOs
         // false = vaga de empresa de exemplo (criado_por_admin)
         // null = não calculado neste endpoint
         public bool? EmpresaCadastrada { get; set; }
+
+        // Nome que a empresa usa no site (nome fantasia ou, sem ele, a razão social)
+        public string? EmpresaNome { get; set; }
     }
 }

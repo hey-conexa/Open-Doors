@@ -303,3 +303,59 @@ svg .dash-hit:focus-visible { stroke: var(--blue); stroke-width: 1.5; }
 
 /* Habilidades: o valor mostra também a base (ex.: 57% · 8/14) */
 .dash-barras--base .dash-barra { grid-template-columns: minmax(90px, 30%) 1fr 96px; }
+
+/* Aviso de candidaturas sem data (fora dos filtros de período) */
+.dash-aviso { font-size: 0.82rem; color: var(--dash-texto-2); }
+.dash-aviso[hidden] { display: none; }
+
+/* ---------- Ranking de candidatos ---------- */
+.dash-ranking { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.dash-ranking__item {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1.4fr) minmax(80px, 1fr) 48px;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.dash-ranking__item:hover { background: var(--dash-faixa); }
+.dash-ranking__item:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+.dash-ranking__pos {
+    font-size: 0.9rem;
+    color: var(--dash-mudo);
+    font-variant-numeric: tabular-nums;
+}
+.dash-ranking li:nth-child(-n+3) .dash-ranking__pos { color: var(--dash-texto); font-weight: 700 !important; }
+
+.dash-ranking__quem { display: flex; flex-direction: column; min-width: 0; }
+.dash-ranking__quem strong {
+    font-size: 0.9rem;
+    color: var(--dash-texto);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dash-ranking__quem span {
+    font-size: 0.78rem;
+    color: var(--dash-mudo);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dash-ranking__item:hover .dash-ranking__quem strong { color: var(--blue); }
+.dash-ranking__pct {
+    font-size: 0.9rem;
+    color: var(--dash-texto);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.dash-ranking__mais { margin-top: 10px; }
+
+@media (max-width: 640px) {
+    .dash-ranking__item { grid-template-columns: 30px minmax(0, 1fr) 44px; }
+    .dash-ranking__trilho { display: none; }
+}

@@ -35,6 +35,7 @@ namespace OpenDoors.Api.Controllers
                 var vagasDto = OrdenarPorPrioridade(resultado, empresasExemplo)
                     .Select(v => MapearParaDto(v, empresasExemplo))
                     .ToList();
+                await PreencherNomesEmpresasAsync(vagasDto);
 
                 return Ok(vagasDto);
             }
@@ -63,6 +64,7 @@ namespace OpenDoors.Api.Controllers
                 var vagasDto = OrdenarPorPrioridade(resultado, empresasExemplo)
                     .Select(v => MapearParaDto(v, empresasExemplo))
                     .ToList();
+                await PreencherNomesEmpresasAsync(vagasDto);
 
                 return Ok(vagasDto);
             }
@@ -87,6 +89,7 @@ namespace OpenDoors.Api.Controllers
                     .ToListAsync();
 
                 var vagasDto = resultado.Select(MapearParaDto).ToList();
+                await PreencherNomesEmpresasAsync(vagasDto);
                 return Ok(vagasDto);
             }
             catch (Exception ex)
@@ -110,7 +113,9 @@ namespace OpenDoors.Api.Controllers
                 if (resultado == null)
                     return NotFound(new { mensagem = "Vaga não encontrada" });
 
-                return Ok(MapearParaDto(resultado));
+                var dto = MapearParaDto(resultado);
+                await PreencherNomesEmpresasAsync(new[] { dto });
+                return Ok(dto);
             }
             catch (Exception ex)
             {
@@ -304,6 +309,32 @@ namespace OpenDoors.Api.Controllers
             return ids.ToHashSet();
         }
 
+        // ===========================================
+        // NOME DA EMPRESA — o estudante vê quem anuncia a vaga (e não o id)
+        // ===========================================
+        private async Task<Dictionary<Guid, string>> ObterNomesEmpresasAsync(IEnumerable<Guid> empresaIds)
+        {
+            var ids = empresaIds.Distinct().ToList();
+            if (ids.Count == 0) return new Dictionary<Guid, string>();
+
+            var empresas = await _dbContext.Empresas
+                .Where(e => ids.Contains(e.Id))
+                .Select(e => new { e.Id, e.NomeFantasia, e.RazaoSocial })
+                .ToListAsync();
+
+            return empresas.ToDictionary(
+                e => e.Id,
+                e => string.IsNullOrWhiteSpace(e.NomeFantasia) ? e.RazaoSocial : e.NomeFantasia!);
+        }
+
+        private async Task PreencherNomesEmpresasAsync(IEnumerable<VagaDto> vagas)
+        {
+            var lista = vagas.ToList();
+            var nomes = await ObterNomesEmpresasAsync(lista.Select(v => v.EmpresaId));
+            foreach (var v in lista)
+                v.EmpresaNome = nomes.GetValueOrDefault(v.EmpresaId);
+        }
+
         private static IEnumerable<Vaga> OrdenarPorPrioridade(IEnumerable<Vaga> vagas, HashSet<Guid> empresasExemplo)
         {
             return vagas
@@ -430,6 +461,8 @@ namespace OpenDoors.Api.Controllers
                      }
                  }
 
+                 var nomesEmpresas = await ObterNomesEmpresasAsync(selecionados.Select(s => s.vaga.EmpresaId));
+
                  var recomendadas = selecionados.Select(item => new
                      {
                          // Vaga data
@@ -452,6 +485,7 @@ namespace OpenDoors.Api.Controllers
                          VagasDisponiveis = item.vaga.VagasDisponiveis,
                          Status = item.vaga.Status,
                          EmpresaCadastrada = !empresasExemplo.Contains(item.vaga.EmpresaId),
+                         EmpresaNome = nomesEmpresas.GetValueOrDefault(item.vaga.EmpresaId),
                          // Score data
                          ScoreTotal = item.match.ScoreTotal,
                          ScoreCurriculo = item.match.ScoreCurriculo,

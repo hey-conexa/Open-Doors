@@ -8,17 +8,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Oswald:wght@200..700&display=swap" rel="stylesheet">
   <link rel="icon" href="../images/favicon/favicon-96x96.png" type="image/x-icon">
-  <link rel="stylesheet" href="../mainstyle.css">
+  <link rel="stylesheet" href="../mainstyle.css?v=2026-11-24">
   <link rel="stylesheet" href="../maindark.css">
   <link rel="stylesheet" href="menu-empresa.css">
   <link rel="stylesheet" href="../vidro.css?v=2026-11-23b">
   <link rel="stylesheet" href="vidro-areas.css?v=2026-11-23b">
-  <link rel="stylesheet" href="empresa-dashboard.css?v=2026-11-23b">
+  <link rel="stylesheet" href="empresa-dashboard.css?v=2026-11-24">
   <link rel="stylesheet" href="../acessibilidade.css">
   <script src="../api-client.js"></script>
   <script src="../maintheme.js" defer></script>
   <script src="../acessibilidade.js" defer></script>
-  <script src="empresa-dashboard.js?v=2026-11-23b" defer></script>
+  <script src="empresa-dashboard.js?v=2026-11-24" defer></script>
 </head>
 <body>
 
@@ -130,6 +130,7 @@
             <select id="dashFiltroVaga"><option value="todas">Todas as vagas</option></select>
           </label>
         </div>
+        <p class="dash-aviso" id="dashAviso" role="status" hidden></p>
 
         <!-- Indicadores -->
         <div class="dash-kpis">
@@ -157,8 +158,8 @@
 
         <!-- Gráficos -->
         <div class="dash-grade">
-          <article class="dash-card dash-card--largo" id="cardTempo">
-            <header><h3>Candidaturas ao longo do tempo</h3><p class="dash-card__sub">Por dia</p></header>
+          <article class="dash-card dash-card--largo" id="cardRanking">
+            <header><h3>Ranking de candidatos por compatibilidade</h3><p class="dash-card__sub">Clique em um candidato para ver o perfil</p></header>
             <div class="dash-grafico"></div>
             <details class="dash-tabela" hidden><summary>Ver dados em tabela</summary></details>
           </article>
@@ -240,6 +241,6 @@
     </div>
   </div>
 
-  <script src="menu-empresa.js?v=2026-11-23"></script>
+  <script src="menu-empresa.js?v=2026-11-24b"></script>
 </body>
 </html>

@@ -88,6 +88,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) { console.warn('Erro ao carregar sessão:', e); }
 })
 
+// Nome da empresa que anuncia a vaga (vem da API em empresaNome); nunca o id.
+// Escapado porque entra em innerHTML.
+function nomeEmpresaHtml(vaga) {
+    const nome = vaga?.empresaNome || vaga?.empresa || 'Empresa';
+    return String(nome).replace(/[&<>"']/g, ch =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
 async function doLogout() {
     clearAuth();
     window.location.href = '../OpenDoors.html';
@@ -923,7 +931,7 @@ async function carregarRecomendadoVagas(estudanteId, fallbackCards = []) {
             const info = document.createElement('div');
             info.innerHTML = `
                 <h3 class="me-vaga__title">${card.titulo}</h3>
-                <p class="me-vaga__company">${card.empresa || card.empresaId || 'Empresa'}</p>
+                <p class="me-vaga__company">${nomeEmpresaHtml(card)}</p>
                 <span class="me-badge me-badge--new" aria-label="Vaga nova">${card.status || 'Nova'}</span>
             `;
             header.appendChild(info);
@@ -997,7 +1005,7 @@ async function carregarRecomendadoVagas(estudanteId, fallbackCards = []) {
                 const info = document.createElement('div');
                 info.innerHTML = `
                     <h3 class="me-vaga__title">${card.titulo}</h3>
-                    <p class="me-vaga__company">${card.empresa || card.empresaId || 'Empresa'}</p>
+                    <p class="me-vaga__company">${nomeEmpresaHtml(card)}</p>
                     <span class="me-badge me-badge--new" aria-label="Vaga nova">${card.status || 'Nova'}</span>
                 `;
                 header.appendChild(info);
@@ -1123,7 +1131,7 @@ async function carregarCandidaturas(estudanteId) {
         candidaturas.forEach(c => {
             const vaga = vagaMap[c.vagaId];
             const titulo = vaga?.titulo || `Vaga #${c.vagaId}`;
-            const empresa = vaga?.empresa || vaga?.empresaId || '—';
+            const empresa = vaga ? nomeEmpresaHtml(vaga) : '—';
             const data = c.criadoEm ? `Enviada ${formatarDataRelativa(c.criadoEm)}` : 'Candidatura enviada';
 
             const statusInfo = mapearStatus(c.status);
@@ -1306,7 +1314,7 @@ async function verTodasVagas() {
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
                     <div>
                         <div style="font-weight:600;font-size:0.95rem">${vaga.titulo}</div>
-                        <div style="font-size:0.78rem;color:var(--gray-400);margin-top:2px">${vaga.empresaId || ''}</div>
+                        <div style="font-size:0.78rem;color:var(--gray-400);margin-top:2px">${nomeEmpresaHtml(vaga)}</div>
                         <div style="margin-top:6px"><span data-score-vaga="${vaga.id}"
                              style="font-size:0.72rem;color:var(--gray-400)">Calculando compatibilidade…</span></div>
                     </div>

@@ -177,7 +177,9 @@ body {
   display: flex;
   align-items: center;
   text-decoration: none;
+  height: var(--nav-h); /* clique só na altura da navbar (a imagem passa dela) */
 }
+.logo-link .logo-img { pointer-events: none; }
 .logo-img { height: 115px; padding-top: 10px; width: auto; }
 [data-theme="dark"] .logo-img { filter: brightness(0) invert(1); opacity: 0.85; }
 

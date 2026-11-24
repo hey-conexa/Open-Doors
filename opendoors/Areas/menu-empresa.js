@@ -552,8 +552,9 @@ async function recalcularScoresModal(vagaId, silencioso = false) {
 async function verPerfilCandidato(estudanteId) {
     if (!estudanteId) return;
 
-    // Abre novo modal sobre o atual
+    // Abre novo modal sobre o atual — ou abre o modal, quando vem do ranking do painel de dados
     const backdrop = document.getElementById('emModalBackdrop');
+    if (backdrop.hidden) abrirModal('Carregando perfil…');
     const title    = document.getElementById('emModalTitle');
     const body     = document.getElementById('emModalBody');
     const footer   = document.getElementById('emModalFooter');

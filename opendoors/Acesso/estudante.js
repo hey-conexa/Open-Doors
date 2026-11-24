@@ -30,7 +30,7 @@ async function onGoogleCredential(credential) {
     }
 
     await carregarSessaoEstudante(r.auth.contaId);
-    showSuccess('Login realizado!', 'Identidade verificada com sucesso. Bem-vindo(a) de volta ao Open Doors!', 'login');
+    irParaAreaEstudante();
   } catch (err) {
     clearAuth();
     showScreen('screen-login');
@@ -133,7 +133,7 @@ async function studentLogin() {
       return showError('login-email', err.message);
     }
 
-    showSuccess('Login realizado!', 'Identidade verificada com sucesso. Bem-vindo(a) de volta ao Open Doors!', 'login');
+    irParaAreaEstudante();
 
   } catch (err) {
     showError('login-email', 'Erro ao conectar com o servidor. Tente novamente.');
@@ -145,10 +145,10 @@ async function studentLogin() {
   }
 }
 
-function loginAsStudent() {
-  setTimeout(() => {
-    window.location.href = window.location.origin + '/PIM-3-Open-Doors-main/PIM%20-%20Front%20End/Areas/MenuEstudante.html';
-  }, 1500);
+// Login bem-sucedido: vai direto para a área do estudante.
+// replace() tira a tela de login do histórico (o "voltar" do navegador não volta para ela)
+function irParaAreaEstudante() {
+  window.location.replace('../Areas/MenuEstudante.html');
 }
 
 // CEP (ViaCEP)

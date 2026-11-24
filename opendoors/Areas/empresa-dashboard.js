@@ -56,9 +56,20 @@
         return node;
     }
 
+    // O backend grava em UTC numa coluna sem fuso ("2026-11-24T22:10:00"):
+    // sem o "Z", o navegador leria como horário local e erraria o dia
     function data(iso) {
-        const d = iso ? new Date(iso) : null;
-        return d && !isNaN(d) ? d : null;
+        if (!iso) return null;
+        const texto = String(iso);
+        const comFuso = /([zZ]|[+-]\d{2}:?\d{2})$/.test(texto) ? texto : texto + 'Z';
+        const d = new Date(comFuso);
+        return isNaN(d) ? null : d;
+    }
+
+    // Data da candidatura. Candidaturas antigas ficaram sem criado_em (a API não
+    // preenchia); nelas usa a última atualização, que existe quando o status mudou
+    function dataCandidatura(c) {
+        return data(c.criadoEm) || data(c.atualizadoEm);
     }
 
     function inicioDoDia(d) {
@@ -228,9 +239,9 @@
 
         const daVaga = c => estado.vaga === 'todas' || String(c.vagaId) === estado.vaga;
         const noPeriodo = (c, ini, fim) => {
-            const d = data(c.criadoEm);
             if (!ini) return true;
-            return d && d >= ini && d < fim;
+            const d = dataCandidatura(c);
+            return !!d && d >= ini && d < fim;
         };
 
         const fimAtual = new Date(inicioDoDia(agora).getTime() + DIA);
@@ -239,8 +250,9 @@
             ? estado.candidaturas.filter(c => daVaga(c) && noPeriodo(c, new Date(inicio.getTime() - dias * DIA), inicio))
             : null;
         const vagas = estado.vaga === 'todas' ? estado.vagas : estado.vagas.filter(v => String(v.id) === estado.vaga);
+        const semData = dias ? estado.candidaturas.filter(c => daVaga(c) && !dataCandidatura(c)).length : 0;
 
-        return { atuais, anteriores, vagas, inicio, dias };
+        return { atuais, anteriores, vagas, inicio, dias, semData };
     }
 
     function matchDe(c) {
@@ -286,43 +298,85 @@
     // ------------------------------------------------------------
     // Gráficos
     // ------------------------------------------------------------
-    function serieTemporal({ atuais, inicio, dias }) {
-        const card = $('#cardTempo');
+    // Ranking das candidaturas pela compatibilidade calculada pela IA.
+    // Cada linha abre o perfil do candidato (verPerfilCandidato, do menu-empresa.js).
+    const RANKING_INICIAL = 10;
+    let rankingCompleto = false;
+
+    function ranking({ atuais }) {
+        const card = $('#cardRanking');
         const alvo = $('.dash-grafico', card);
-        const datas = atuais.map(c => data(c.criadoEm)).filter(Boolean);
-        if (!datas.length) { vazio(alvo, 'Nenhuma candidatura no período.'); preencherTabela(card, [], []); return; }
+        const vagaPorId = new Map(estado.vagas.map(v => [v.id, v]));
 
-        const hoje = inicioDoDia(new Date());
-        const ini = inicio || inicioDoDia(new Date(Math.min(...datas)));
-        const spanDias = Math.round((hoje - ini) / DIA) + 1;
-        // Dia a dia até 31 dias; por semana até ~6 meses; por mês acima disso
-        const unidade = spanDias <= 31 ? 'dia' : spanDias <= 190 ? 'semana' : 'mes';
+        const linhas = atuais
+            .map(c => ({ c, m: matchDe(c) }))
+            .filter(x => x.m && !isNaN(Number(x.m.scoreTotal)))
+            .map(({ c, m }) => {
+                const perfil = estado.perfis.get(String(c.estudanteId));
+                return {
+                    estudanteId: c.estudanteId,
+                    nome: perfil?.nome || (estado.perfis.size ? 'Candidato' : 'Carregando…'),
+                    curso: [perfil?.curso, perfil?.instituicao].filter(Boolean).join(' · '),
+                    vaga: vagaPorId.get(c.vagaId)?.titulo || `Vaga ${c.vagaId}`,
+                    status: c.status,
+                    score: Number(m.scoreTotal)
+                };
+            })
+            .sort((a, b) => b.score - a.score);
 
-        const baldes = [];
-        const fmtDia = d => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        if (unidade === 'mes') {
-            const c = new Date(ini.getFullYear(), ini.getMonth(), 1);
-            while (c <= hoje) {
-                const fim = new Date(c.getFullYear(), c.getMonth() + 1, 1);
-                baldes.push({ ini: new Date(c), fim, rotulo: c.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
-                              rotuloCurto: c.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '') });
-                c.setMonth(c.getMonth() + 1);
-            }
-        } else {
-            const passo = unidade === 'dia' ? 1 : 7;
-            for (let t = ini.getTime(); t <= hoje.getTime(); t += passo * DIA) {
-                const a = new Date(t), b = new Date(t + passo * DIA);
-                baldes.push({ ini: a, fim: b, rotuloCurto: fmtDia(a),
-                              rotulo: passo === 1 ? a.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
-                                                  : `Semana de ${fmtDia(a)} a ${fmtDia(new Date(b - DIA))}` });
-            }
+        const semScore = atuais.length - linhas.length;
+        $('.dash-card__sub', card).textContent = linhas.length
+            ? `${fmtInt(linhas.length)} candidatura${linhas.length > 1 ? 's' : ''} avaliada${linhas.length > 1 ? 's' : ''} pela IA`
+              + (semScore ? ` · ${fmtInt(semScore)} ainda sem score` : '') + ' · clique para ver o candidato'
+            : 'Clique em um candidato para ver o perfil';
+
+        if (!linhas.length) {
+            vazio(alvo, atuais.length
+                ? 'As candidaturas do período ainda não têm score de compatibilidade.'
+                : 'Nenhuma candidatura no período.');
+            preencherTabela(card, [], []);
+            return;
         }
-        baldes.forEach(b => { b.valor = datas.filter(d => d >= b.ini && d < b.fim).length; });
 
-        $('.dash-card__sub', card).textContent = `Por ${unidade === 'mes' ? 'mês' : unidade}`;
-        colunas(alvo, baldes, { rotuloSerie: 'Candidaturas recebidas por ' + unidade,
-                               extra: b => b.valor === 1 ? 'candidatura' : 'candidaturas' });
-        preencherTabela(card, ['Período', 'Candidaturas'], baldes.map(b => [b.rotulo, fmtInt(b.valor)]));
+        const visiveis = rankingCompleto ? linhas : linhas.slice(0, RANKING_INICIAL);
+        const lista = el('ol', 'dash-ranking');
+        visiveis.forEach((l, i) => {
+            const li = el('li');
+            const btn = el('button', 'dash-ranking__item');
+            btn.type = 'button';
+            btn.setAttribute('aria-label', `${i + 1}º lugar: ${l.nome}, ${fmtPct(l.score)} compatível com ${l.vaga}. Ver perfil do candidato`);
+
+            btn.appendChild(el('span', 'dash-ranking__pos', `${i + 1}º`));
+            const quem = el('span', 'dash-ranking__quem');
+            quem.appendChild(el('strong', '', l.nome));
+            quem.appendChild(el('span', '', l.curso ? `${l.vaga} · ${l.curso}` : l.vaga));
+            btn.appendChild(quem);
+
+            const trilho = el('span', 'dash-barra__trilho dash-ranking__trilho');
+            const fill = el('span', 'dash-barra__fill');
+            fill.style.width = `${Math.max(0, Math.min(100, l.score))}%`;
+            trilho.appendChild(fill);
+            btn.appendChild(trilho);
+
+            btn.appendChild(el('span', 'dash-ranking__pct', fmtPct(l.score)));
+            btn.addEventListener('click', () => {
+                if (typeof verPerfilCandidato === 'function') verPerfilCandidato(l.estudanteId);
+            });
+            li.appendChild(btn);
+            lista.appendChild(li);
+        });
+
+        alvo.replaceChildren(lista);
+        if (linhas.length > RANKING_INICIAL) {
+            const mais = el('button', 'em-btn em-btn--ghost em-btn--sm dash-ranking__mais',
+                rankingCompleto ? 'Mostrar só os 10 primeiros' : `Ver todos (${fmtInt(linhas.length)})`);
+            mais.type = 'button';
+            mais.addEventListener('click', () => { rankingCompleto = !rankingCompleto; ranking({ atuais }); });
+            alvo.appendChild(mais);
+        }
+
+        preencherTabela(card, ['Posição', 'Candidato', 'Vaga', 'Compatibilidade'],
+            linhas.map((l, i) => [`${i + 1}º`, l.nome, l.vaga, fmtPct(l.score)]));
     }
 
     function funil({ atuais }) {
@@ -452,8 +506,13 @@
     // ------------------------------------------------------------
     function render() {
         const r = recorte();
+        const aviso = $('#dashAviso');
+        aviso.hidden = !r.semData;
+        aviso.textContent = r.semData
+            ? `${fmtInt(r.semData)} candidatura${r.semData > 1 ? 's' : ''} sem data de envio não entra${r.semData > 1 ? 'm' : ''} nos filtros de 7, 30 ou 90 dias (aparece${r.semData > 1 ? 'm' : ''} em "Tudo").`
+            : '';
         indicadores(r);
-        serieTemporal(r);
+        ranking(r);
         funil(r);
         distribuicaoScore(r);
         composicaoScore(r);
@@ -504,7 +563,15 @@
             render();
 
             // Perfis por último: são o passo mais pesado e só alimentam o gráfico de habilidades
-            const ids = [...new Set(candidaturas.map(c => String(c.estudanteId)))]
+            // Os de maior compatibilidade primeiro: são os que aparecem no topo do ranking
+            const melhorScore = new Map();
+            candidaturas.forEach(c => {
+                const sc = Number(matches.get(`${c.vagaId}|${c.estudanteId}`)?.scoreTotal ?? -1);
+                const id = String(c.estudanteId);
+                melhorScore.set(id, Math.max(melhorScore.get(id) ?? -1, sc));
+            });
+            const ids = [...melhorScore.keys()]
+                .sort((a, b) => melhorScore.get(b) - melhorScore.get(a))
                 .filter(id => !estado.perfis.has(id))
                 .slice(0, MAX_CANDIDATOS_PERFIL);
             await emLotes(ids, 6, async id => {
