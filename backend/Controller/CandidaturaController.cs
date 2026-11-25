@@ -145,9 +145,11 @@ namespace OpenDoors.Api.Controllers
                     Status = dto.Status ?? "pendente",
                     CartaApresentacao = dto.CartaApresentacao,
                     VisualizadoEmpresa = false,
-                    // A coluna é "timestamp without time zone" e não tem valor padrão no banco:
-                    // sem isto a candidatura fica sem data e some dos filtros de período da empresa
-                    CriadoEm = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                    // A coluna não tem valor padrão no banco: sem isto a candidatura fica
+                    // sem data e some dos filtros de período da empresa.
+                    // Precisa ser UTC: no modelo do EF a coluna é "timestamp with time zone",
+                    // e o Npgsql recusa DateTime com Kind=Unspecified (dava erro 500 ao candidatar).
+                    CriadoEm = DateTime.UtcNow
                 };
 
                 await _dbContext.Candidaturas.AddAsync(nova);
