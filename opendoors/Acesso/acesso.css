@@ -850,8 +850,24 @@ input[type="month"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cu
   .social-row  { grid-template-columns: 1fr; }
   .page-badge  { display: none; }
 }
+@media (max-width: 860px) {
+  /* No celular a página rola inteira, sem painel com rolagem interna */
+  html, body  { height: auto; }
+  .main       { overflow: visible; }
+  /* Evita o zoom automático do iOS ao focar campos */
+  input, select, textarea { font-size: 16px !important; }
+}
 @media (max-width: 480px) {
   .theme-toggle span { display: none; }
+  .brand-panel { padding: 24px 16px 16px; }
+  .main        { padding: 20px 16px; }
+  .logo-img    { height: 90px; }
+
+  /* Modal do código: 6 dígitos precisam caber em ~300px */
+  .overlay   { padding: 16px; }
+  .modal     { padding: 28px 18px; }
+  .otp-row   { gap: 6px; }
+  .otp-digit { width: 40px !important; height: 50px; font-size: 18px !important; }
 }
 
 /* Login com Google e redefinição de senha */

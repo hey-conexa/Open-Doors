@@ -70,6 +70,18 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeProfileDrawer();
 });
 
+// Fecha a gaveta ao tocar fora dela. O #profileOverlay sozinho não basta:
+// a .navbar usa backdrop-filter, o que prende o overlay (position: fixed)
+// ao tamanho da barra, e no celular tocar no resto da página não fechava.
+// Cliques no menu hambúrguer e no próprio botão de perfil são ignorados,
+// porque são eles que abrem a gaveta.
+document.addEventListener('click', e => {
+  const drawer = document.getElementById('profileDrawer');
+  if (!drawer?.classList.contains('open')) return;
+  if (e.target.closest('#profileDrawer, .profile-wrap, .menu-links')) return;
+  closeProfileDrawer();
+});
+
 document.addEventListener('keydown', e => {
   const drawer = document.getElementById('profileDrawer');
   if (!drawer?.classList.contains('open')) return;
