@@ -703,3 +703,19 @@ section,
     .navbar:not(:has(.hamburger)) .nav-right > .theme-toggle-nav { display: flex; }
     .navbar:not(:has(.hamburger)) .em-badge-nav { display: none; }
 }
+
+/* Páginas com menu hambúrguer: no celular o botão "Entrar"/perfil do topo
+   some (ele vai para dentro do menu), mas a gaveta de perfil continua
+   dentro do .profile-wrap. Escondemos só o botão, não o bloco todo,
+   senão "Entrar / Perfil" e "Meu Perfil" abrem uma gaveta invisível. */
+@media (max-width: 768px) {
+    .navbar:has(.hamburger) .nav-right > .profile-wrap { display: block; position: static; }
+    .navbar:has(.hamburger) .nav-right > .profile-wrap > .profile-btn { display: none; }
+    .navbar:has(.hamburger) .profile-drawer {
+        position: fixed;
+        top: calc(var(--nav-h) + 8px);
+        right: 12px;
+        left: auto;
+        width: min(300px, calc(100vw - 24px));
+    }
+}
