@@ -58,6 +58,14 @@
 
 .dash { display: flex; flex-direction: column; gap: 16px; }
 
+/* O mainstyle.css põe borda e sombra em todo <section>; o painel não é um cartão,
+   são os cartões dentro dele que têm o vidro. [data-theme] vence também a regra do tema escuro */
+[data-theme] .dash {
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
 /* Enquanto recarrega, mantém o desenho anterior mais apagado (sem pular o layout) */
 .dash--carregando .dash-kpis,
 .dash--carregando .dash-grade { opacity: 0.55; transition: opacity 0.2s ease; }
@@ -70,7 +78,6 @@
     gap: 12px;
 }
 .dash-titulo {
-    font-family: "Oswald", sans-serif !important;
     font-size: clamp(1.3rem, 3vw, 1.6rem);
     color: var(--dash-texto);
     line-height: 1.2;

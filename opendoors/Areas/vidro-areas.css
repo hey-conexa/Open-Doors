@@ -180,3 +180,28 @@ body::before {
 @media (min-width: 769px) {
     [data-theme="dark"] .menu-links { background: transparent; }
 }
+
+/* --------------------------------------------------------------
+   Bordas de <section>
+   O mainstyle.css põe borda e sombra em TODO <section>. Nas áreas isso
+   desenha molduras onde não deve (blocos do Assistente de Carreira, painel
+   de dados...). Zera aqui e devolve só as linhas que são de propósito.
+   -------------------------------------------------------------- */
+[data-theme] main section {
+    border: 0;
+    box-shadow: none;
+}
+
+/* Estudante: faixas separadas só por uma linha embaixo */
+[data-theme] .me-hero,
+[data-theme] .me-pagina,
+[data-theme] .me-section {
+    border-bottom: 1px solid var(--vidro-borda);
+}
+[data-theme] .me-section--last { border-bottom: 0; }
+
+/* Empresa: "Minhas vagas" continua sendo um cartão de vidro */
+[data-theme] .em-section {
+    border: 1px solid var(--vidro-borda);
+    box-shadow: var(--vidro-sombra), var(--vidro-brilho);
+}
