@@ -376,7 +376,8 @@ section,
     background: var(--white);
 }
 
-.apoiadores-inner {
+.apoiadores-inner,
+.apoiadores h2 {
     padding: 0 clamp(20px, 5vw, 60px);
 }
 
@@ -665,4 +666,40 @@ section,
         right: -8px;
         width: 240px;
     }
+}
+
+
+/* AJUSTES MOBILE */
+
+@media (max-width: 480px) {
+    /* Cartões do topo mais baixos para caberem melhor na tela */
+    .botoes-topo button { height: 200px; }
+
+    /* Mural: os slides usam estilos inline, por isso o !important */
+    .mural { padding-left: 16px; padding-right: 16px; }
+    .mural-carousel { height: 260px; }
+    .mural-slide { padding: 24px 56px !important; text-align: center; }
+    .mural-slide > div:first-child { font-size: 1.4rem !important; }
+    .mural-slide > div:nth-child(2) { font-size: 0.95rem !important; }
+    .mural-slide > div:nth-child(3) { font-size: 0.8rem !important; }
+    .mural-arrow { width: 36px; height: 36px; }
+    .mural-arrow--left  { left: 8px; }
+    .mural-arrow--right { right: 8px; }
+
+    .carousel-imagens img { min-width: 180px; height: 80px; }
+
+    .footer-strip { flex-direction: column; align-items: flex-start; }
+}
+
+/* Evita o zoom automático do iOS ao focar campos (exige fonte >= 16px) */
+@media (max-width: 768px) {
+    input, select, textarea { font-size: 16px !important; }
+}
+
+/* Páginas sem menu hambúrguer (painel da empresa): mantém perfil e tema
+   visíveis no celular, senão não há como sair da conta */
+@media (max-width: 768px) {
+    .navbar:not(:has(.hamburger)) .nav-right > .profile-wrap { display: block; }
+    .navbar:not(:has(.hamburger)) .nav-right > .theme-toggle-nav { display: flex; }
+    .navbar:not(:has(.hamburger)) .em-badge-nav { display: none; }
 }
